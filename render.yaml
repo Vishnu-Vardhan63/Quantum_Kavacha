@@ -1,0 +1,26 @@
+services:
+  # 1. FastAPI Python ML Engine Web Service
+  - type: web
+    name: q-fraudshield-fastapi
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt && python scripts/generate_demo_data.py && python scripts/train_all.py"
+    startCommand: "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: QUANTUM_MODE_DEFAULT
+        value: SIMULATION
+
+  # 2. Node.js Express MERN Network API Web Service
+  - type: web
+    name: q-fraudshield-express
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: "npm install --prefix backend"
+    startCommand: "node backend/server.js"
+    envVars:
+      - key: NODE_VERSION
+        value: 20.10.0

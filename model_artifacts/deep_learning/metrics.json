@@ -1,0 +1,74 @@
+{
+  "Autoencoder (Anomaly)": {
+    "accuracy": 0.9916666666666667,
+    "precision": 1.0,
+    "recall": 0.8947,
+    "f1": 0.9444,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 2,
+      "tp": 17
+    },
+    "inference_ms_per_txn": 0.002,
+    "sample_count": 240
+  },
+  "Variational Autoencoder (VAE)": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.003,
+    "sample_count": 240
+  },
+  "Dense NN": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.001,
+    "sample_count": 240
+  },
+  "Tabular Transformer": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.013,
+    "sample_count": 240
+  }
+}

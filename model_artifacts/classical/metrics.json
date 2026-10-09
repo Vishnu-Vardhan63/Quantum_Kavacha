@@ -1,0 +1,92 @@
+{
+  "Logistic Regression": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.001,
+    "sample_count": 240
+  },
+  "Random Forest": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.017,
+    "sample_count": 240
+  },
+  "XGBoost": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.006,
+    "sample_count": 240
+  },
+  "LightGBM": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.005,
+    "sample_count": 240
+  },
+  "CatBoost": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.003,
+    "sample_count": 240
+  }
+}

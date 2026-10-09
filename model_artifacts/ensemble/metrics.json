@@ -1,0 +1,45 @@
+{
+  "Hybrid Ensemble (Full)": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.002,
+    "sample_count": 240
+  },
+  "Ensemble Without Quantum (Ablation)": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "fpr": 0.0,
+    "recall_at_target_precision": 1.0,
+    "confusion_matrix": {
+      "tn": 221,
+      "fp": 0,
+      "fn": 0,
+      "tp": 19
+    },
+    "inference_ms_per_txn": 0.001,
+    "sample_count": 240
+  },
+  "learned_weights": {
+    "xgboost_prob": 0.2716,
+    "autoencoder_anomaly": 0.2024,
+    "gnn_prob": 0.2079,
+    "quantum_anomaly": 0.1292,
+    "behavioral_anomaly": 0.1889
+  }
+}

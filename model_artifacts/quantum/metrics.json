@@ -1,0 +1,80 @@
+{
+  "QSVC (Quantum Kernel)": {
+    "accuracy": 0.9222222222222223,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.6962,
+    "pr_auc": 0.1942,
+    "fpr": 0.0,
+    "recall_at_target_precision": 0.0,
+    "confusion_matrix": {
+      "tn": 166,
+      "fp": 0,
+      "fn": 14,
+      "tp": 0
+    },
+    "inference_ms_per_txn": 0.049,
+    "sample_count": 180,
+    "execution_mode": "SIMULATION",
+    "qubits": 4
+  },
+  "Quantum OneClassSVM (Anomaly)": {
+    "accuracy": 0.5777777777777777,
+    "precision": 0.0694,
+    "recall": 0.3571,
+    "f1": 0.1163,
+    "roc_auc": 0.4359,
+    "pr_auc": 0.1717,
+    "fpr": 0.4036,
+    "recall_at_target_precision": 0.0714,
+    "confusion_matrix": {
+      "tn": 99,
+      "fp": 67,
+      "fn": 9,
+      "tp": 5
+    },
+    "inference_ms_per_txn": 0.06,
+    "sample_count": 180,
+    "execution_mode": "SIMULATION",
+    "qubits": 4
+  },
+  "Classical RBF-SVM (Same PCA Subsample)": {
+    "accuracy": 0.9722222222222222,
+    "precision": 1.0,
+    "recall": 0.6429,
+    "f1": 0.7826,
+    "roc_auc": 0.997,
+    "pr_auc": 0.9708,
+    "fpr": 0.0,
+    "recall_at_target_precision": 0.8571,
+    "confusion_matrix": {
+      "tn": 166,
+      "fp": 0,
+      "fn": 5,
+      "tp": 9
+    },
+    "inference_ms_per_txn": 0.007,
+    "sample_count": 180,
+    "execution_mode": "CLASSICAL_BASELINE"
+  },
+  "XGBoost (Same PCA Subsample)": {
+    "accuracy": 0.9833333333333333,
+    "precision": 0.8667,
+    "recall": 0.9286,
+    "f1": 0.8966,
+    "roc_auc": 0.9948,
+    "pr_auc": 0.942,
+    "fpr": 0.012,
+    "recall_at_target_precision": 0.7143,
+    "confusion_matrix": {
+      "tn": 164,
+      "fp": 2,
+      "fn": 1,
+      "tp": 13
+    },
+    "inference_ms_per_txn": 0.008,
+    "sample_count": 180,
+    "execution_mode": "CLASSICAL_BASELINE"
+  }
+}

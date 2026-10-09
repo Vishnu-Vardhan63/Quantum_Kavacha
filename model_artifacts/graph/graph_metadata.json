@@ -1,0 +1,9 @@
+{
+  "num_nodes": 2595,
+  "num_edges": 9600,
+  "num_transactions": 1200,
+  "num_users": 81,
+  "num_devices": 88,
+  "num_merchants": 41,
+  "num_ips": 1185
+}
