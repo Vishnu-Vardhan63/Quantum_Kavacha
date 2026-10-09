@@ -33,3 +33,6 @@ frontend/dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Quantum Cache
+model_artifacts/quantum/cache/

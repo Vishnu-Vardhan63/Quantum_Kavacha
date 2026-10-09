@@ -1,6 +1,9 @@
 import os
 import pandas as pd
 from typing import List, Dict, Any, Optional
+import json
+import time
+from backend.app.db.database import get_db_connection
 from fastapi import APIRouter, HTTPException, Query, Path
 from backend.app.schemas.transaction import TransactionPayload, PredictionResponse
 from backend.app.services.fraud_engine import fraud_engine
@@ -13,6 +16,12 @@ router = APIRouter(prefix="/api", tags=["Transactions"])
 async def predict_transaction(payload: TransactionPayload):
     try:
         pred = fraud_engine.predict(payload)
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO transactions (txn_id, user_id, amount, merchant_id, device_id, ip, timestamp, risk_score, decision, risk_level, prediction_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (pred.txn_id, payload.user_id, payload.amount, payload.merchant_id, payload.device_id, payload.ip, time.time(), pred.risk_score, pred.decision, pred.risk_level, pred.model_dump_json())
+            )
+            conn.commit()
         try:
             from backend.app.services.investigation_service import investigation_service
             investigation_service.register_case_from_prediction(pred, payload)
@@ -24,9 +33,18 @@ async def predict_transaction(payload: TransactionPayload):
 
 @router.get("/transactions", summary="List Scored Transactions")
 async def get_transactions(limit: int = Query(default=50, ge=1, le=500)):
-    # Combine simulation memory buffer with sample file
-    results = [item["prediction"] for item in simulation_service.buffer[:limit]]
-    
+    # Fetch from DB first
+    results = []
+    with get_db_connection() as conn:
+        rows = conn.execute("SELECT prediction_data FROM transactions ORDER BY timestamp DESC LIMIT ?", (limit,)).fetchall()
+        for row in rows:
+            results.append(json.loads(row["prediction_data"]))
+
+    # Combine simulation memory buffer with sample file if needed
+    if len(results) < limit:
+        sim_results = [item["prediction"] for item in simulation_service.buffer[:limit - len(results)]]
+        results.extend(sim_results)
+
     if len(results) < limit:
         sample_path = os.path.join(settings.DATA_DIR, "sample", "demo_transactions.csv")
         if os.path.exists(sample_path):

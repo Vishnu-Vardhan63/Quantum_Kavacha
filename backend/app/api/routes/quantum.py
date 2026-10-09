@@ -27,12 +27,33 @@ async def get_quantum_status():
         with open(circuit_info_path, "r") as f:
             circuit_info = json.load(f)
             
+    # IBM Quantum hardware readiness checks
+    ibm_token_set = bool(settings.IBM_QUANTUM_TOKEN and len(settings.IBM_QUANTUM_TOKEN.strip()) > 5)
+    ibm_runtime_installed = False
+    try:
+        import qiskit_ibm_runtime
+        ibm_runtime_installed = True
+        ibm_runtime_version = getattr(qiskit_ibm_runtime, "__version__", "unknown")
+    except ImportError:
+        ibm_runtime_version = None
+
+    if ibm_token_set and ibm_runtime_installed:
+        ibm_hardware_readiness = "CONFIGURED_AND_READY"
+    elif ibm_token_set and not ibm_runtime_installed:
+        ibm_hardware_readiness = "CREDENTIAL_SET_BUT_RUNTIME_SDK_MISSING"
+    else:
+        ibm_hardware_readiness = "UNCONFIGURED_LOCAL_SIMULATION_ONLY"
+
     return {
         "engine_online": (qiskit_status.get("status") == "AVAILABLE"),
         "execution_mode": settings.QUANTUM_MODE_DEFAULT,
         "qiskit_version": qiskit_status.get("version"),
         "qiskit_machine_learning_version": qml_status.get("version"),
-        "ibm_hardware_token_configured": bool(settings.IBM_QUANTUM_TOKEN),
+        "ibm_hardware_token_configured": ibm_token_set,
+        "ibm_quantum_runtime_installed": ibm_runtime_installed,
+        "ibm_quantum_runtime_version": ibm_runtime_version,
+        "ibm_hardware_readiness": ibm_hardware_readiness,
+        "ibm_hardware_disclaimer": "Local CPU Statevector simulation is active. Physical QPU execution requires valid IBM_QUANTUM_TOKEN and qiskit-ibm-runtime package.",
         "circuit_telemetry": circuit_info
     }
 

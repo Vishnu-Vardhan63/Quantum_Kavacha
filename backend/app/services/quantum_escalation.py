@@ -33,10 +33,11 @@ class QuantumEscalationEngine:
                 "escalation_reason": "Low Classical Confidence / Complex Anomaly Topology" if is_uncertain else "High-Value Complex Structural Relationship",
                 "quantum_execution_required": True,
                 "qubits": 4,
-                "feature_map": "ZZFeatureMap (reps=2, entanglement='full')",
+                "feature_map": "ZZFeatureMap (reps=2, entanglement='linear')",
                 "kernel_type": "FidelityStatevectorKernel",
-                "circuit_depth": 24,
-                "fidelity_score": round(min(0.98, classical_prob * 0.95 + 0.04), 4)
+                "circuit_depth": 22,
+                "backend": "Local Qiskit Statevector Simulator (CPU)",
+                "execution_mode": "SIMULATION"
             }
         else:
             return {
@@ -47,7 +48,8 @@ class QuantumEscalationEngine:
                 "feature_map": "ZZFeatureMap (Standby)",
                 "kernel_type": "FidelityStatevectorKernel (Standby)",
                 "circuit_depth": 0,
-                "fidelity_score": round(classical_prob, 4)
+                "backend": "None (Bypassed)",
+                "execution_mode": "NOT_EXECUTED"
             }
 
 quantum_escalation_engine = QuantumEscalationEngine()

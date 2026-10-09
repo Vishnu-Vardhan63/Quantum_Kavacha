@@ -66,7 +66,7 @@ class PaymentForensicsService:
     ]
 
     def decode_qr_image(self, image_base64: str) -> Tuple[Optional[str], Optional[str]]:
-        """Safely decode QR code payload from base64 image bytes."""
+        """Safely decode QR code payload(s) from base64 image bytes, detecting single or multiple QRs."""
         if not HAS_CV2:
             return None, "OpenCV QR detector is unavailable in current runtime."
 
@@ -76,8 +76,8 @@ class PaymentForensicsService:
                 image_base64 = image_base64.split(",", 1)[1]
 
             image_bytes = base64.b64decode(image_base64)
-            if len(image_bytes) > 5 * 1024 * 1024:
-                return None, "Image exceeds maximum allowed size (5 MB)."
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return None, "Image exceeds maximum allowed size (10 MB)."
 
             nparr = np.frombuffer(image_bytes, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -85,6 +85,21 @@ class PaymentForensicsService:
                 return None, "Malformed or unsupported image format."
 
             detector = cv2.QRCodeDetector()
+
+            # Check for multiple QR codes first if supported
+            if hasattr(detector, "detectAndDecodeMulti"):
+                try:
+                    retval, decoded_info, points, _ = detector.detectAndDecodeMulti(img)
+                    if retval and decoded_info:
+                        non_empty = [txt.strip() for txt in decoded_info if txt and txt.strip()]
+                        if len(non_empty) > 1:
+                            # Flag multiple QRs detected - return the primary but indicate multiplicity
+                            return non_empty[0], f"MULTIPLE_QR_DETECTED:{len(non_empty)}"
+                        elif len(non_empty) == 1:
+                            return non_empty[0], None
+                except Exception:
+                    pass
+
             val, points, _ = detector.detectAndDecode(img)
             if val:
                 return val.strip(), None
@@ -718,7 +733,7 @@ class PaymentForensicsService:
             decoded_qr_from_img, qr_err = self.decode_qr_image(req.image_base64)
             if qr_err and input_type == "QR":
                 warnings.append(f"QR image scan note: {qr_err}")
-            
+
             ocr_from_img, ocr_err = self.extract_screenshot_ocr(req.image_base64)
             if ocr_err and input_type == "SCREENSHOT":
                 warnings.append(f"Screenshot OCR notice: {ocr_err}")
@@ -802,24 +817,42 @@ class PaymentForensicsService:
                         se_signals = self.extract_social_engineering_signals(upi_data["tn"])
                         risk_signals.extend(se_signals)
                 else:
-                    # Non-UPI QR payload
-                    is_safe, msg, sec_meta = self.validate_url_security(decoded_text)
-                    evidence.append(EvidenceItem(
-                        category="NETWORK",
-                        field="qr_url_scheme",
-                        value=sec_meta.get("scheme", "raw_text"),
-                        status="OBSERVED",
-                        confidence=1.0,
-                        source="QR_PAYLOAD"
-                    ))
-                    if not is_safe:
-                        risk_signals.append(RiskSignal(
-                            name="Unsafe QR Destination",
-                            severity="CRITICAL",
+                    # Non-UPI QR payload: distinguish URL vs Plain Text
+                    is_url_or_scheme = (
+                        "://" in decoded_text
+                        or decoded_text.startswith("www.")
+                        or any(decoded_text.lower().startswith(s) for s in ["javascript:", "data:", "file:", "ftp:", "tel:", "mailto:", "sms:"])
+                    )
+                    if is_url_or_scheme:
+                        is_safe, msg, sec_meta = self.validate_url_security(decoded_text)
+                        evidence.append(EvidenceItem(
+                            category="NETWORK",
+                            field="qr_url_scheme",
+                            value=sec_meta.get("scheme", "raw_text"),
                             status="OBSERVED",
-                            description=msg,
-                            interpretation="QR points to an unapproved or high-risk URL scheme."
+                            confidence=1.0,
+                            source="QR_PAYLOAD"
                         ))
+                        if not is_safe:
+                            risk_signals.append(RiskSignal(
+                                name="Unsafe QR Destination",
+                                severity="CRITICAL",
+                                status="OBSERVED",
+                                description=msg,
+                                interpretation="QR points to an unapproved, private, or high-risk URL destination."
+                            ))
+                    else:
+                        # Legitimate Plain Text QR Code
+                        evidence.append(EvidenceItem(
+                            category="CONTENT",
+                            field="qr_plain_text",
+                            value=decoded_text[:200] + ("..." if len(decoded_text) > 200 else ""),
+                            status="OBSERVED",
+                            confidence=1.0,
+                            source="QR_PAYLOAD"
+                        ))
+                        se_signals = self.extract_social_engineering_signals(decoded_text)
+                        risk_signals.extend(se_signals)
             elif input_type == "QR":
                 evidence.append(EvidenceItem(
                     category="IDENTIFIER",
@@ -1247,7 +1280,7 @@ class PaymentForensicsService:
                             description=chk.description,
                             interpretation="Discrepancy detected between visual payment evidence and encoded routing metadata."
                         ))
-                
+
                 if ev_res.visual_assessment.manipulation_level in ["HIGH", "MODERATE"]:
                     risk_signals.append(RiskSignal(
                         name="Visual Manipulation Indicators",
@@ -1277,7 +1310,7 @@ class PaymentForensicsService:
                 ))
             except Exception as e:
                 warnings.append(f"Evidence verification notice: {str(e)}")
-        
+
         t_ev_ms = round((time.time() - t_stage_ev) * 1000, 2)
         timings.append({"stage": "Gemini Multimodal Evidence Verification", "latency_ms": t_ev_ms})
 
@@ -1403,8 +1436,9 @@ class PaymentForensicsService:
         try:
             from backend.app.services.investigation_service import investigation_service
             investigation_service.register_case_from_check_payment(res_obj, req)
-        except Exception:
-            pass
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
 
         return res_obj
 

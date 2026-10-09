@@ -14,7 +14,7 @@
       "fn": 14,
       "tp": 0
     },
-    "inference_ms_per_txn": 0.049,
+    "inference_ms_per_txn": 0.073,
     "sample_count": 180,
     "execution_mode": "SIMULATION",
     "qubits": 4
@@ -34,7 +34,7 @@
       "fn": 9,
       "tp": 5
     },
-    "inference_ms_per_txn": 0.06,
+    "inference_ms_per_txn": 0.063,
     "sample_count": 180,
     "execution_mode": "SIMULATION",
     "qubits": 4
@@ -73,7 +73,7 @@
       "fn": 1,
       "tp": 13
     },
-    "inference_ms_per_txn": 0.008,
+    "inference_ms_per_txn": 0.035,
     "sample_count": 180,
     "execution_mode": "CLASSICAL_BASELINE"
   }

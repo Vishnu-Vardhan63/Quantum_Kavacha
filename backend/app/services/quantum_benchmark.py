@@ -27,7 +27,7 @@ class QuantumBenchmarkService:
         for i in range(int(n_samples * 0.60)):
             dataset.append({
                 "txn_id": f"BENCH-GEN-{i:03d}",
-                "user_id": "USR-1001",
+                "user_id": f"USR-BENCH-GEN-{i:03d}",
                 "amount": float(np.random.uniform(250.0, 3500.0)),
                 "hour": int(np.random.choice([10, 11, 12, 14, 15, 16, 17, 18, 19])),
                 "velocity_1h": int(np.random.choice([1, 1, 1, 2])),
@@ -43,7 +43,7 @@ class QuantumBenchmarkService:
             is_fraud = int(np.random.choice([0, 1], p=[0.45, 0.55]))
             dataset.append({
                 "txn_id": f"BENCH-AMB-{i:03d}",
-                "user_id": "USR-9901",
+                "user_id": f"USR-BENCH-AMB-{i:03d}",
                 "amount": float(np.random.uniform(45000.0, 85000.0)),
                 "hour": int(np.random.choice([1, 2, 23, 13, 17])),
                 "velocity_1h": int(np.random.choice([3, 4, 5])),
@@ -58,7 +58,7 @@ class QuantumBenchmarkService:
         for i in range(int(n_samples * 0.20)):
             dataset.append({
                 "txn_id": f"BENCH-FRD-{i:03d}",
-                "user_id": "USR-MULE-88",
+                "user_id": f"USR-BENCH-FRD-{i:03d}",
                 "amount": float(np.random.uniform(65000.0, 150000.0)),
                 "hour": int(np.random.choice([0, 1, 2, 3, 23])),
                 "velocity_1h": int(np.random.uniform(8, 16)),
@@ -76,6 +76,9 @@ class QuantumBenchmarkService:
         Execute comparative evaluation: Classical-Only vs Classical + Qiskit Quantum Kernel.
         Computes Precision, Recall, F1, ROC-AUC, PR-AUC, and Mean Latency.
         """
+        from backend.app.services.velocity_engine import velocity_engine
+        velocity_engine.reset()
+
         data = self.generate_evaluation_dataset(n_samples)
         y_true = np.array([d["ground_truth_label"] for d in data])
 
@@ -84,6 +87,8 @@ class QuantumBenchmarkService:
         hybrid_scores = []
         hybrid_times = []
         quantum_escalations_count = 0
+
+        from sklearn.metrics import confusion_matrix
 
         for item in data:
             payload = TransactionPayload(
@@ -98,31 +103,26 @@ class QuantumBenchmarkService:
                 account_age_days=item["account_age_days"]
             )
 
-            # 1. Classical-Only Scoring
+            # 1. Classical-Only Pipeline (XGBoost, RF, Isolation Forest, Rules, with Quantum Escalation Deactivated)
             t0 = time.perf_counter()
-            c_score = min(100.0, max(0.0, (
-                0.35 * item["device_score"] +
-                0.25 * item["merchant_risk"] +
-                0.25 * (item["velocity_1h"] / 15.0) +
-                0.15 * (item["amount"] / 100000.0)
-            ) * 100.0))
+            pred_c = fraud_engine.predict(payload, enable_quantum=False)
             t_c = (time.perf_counter() - t0) * 1000.0
-            classical_scores.append(c_score / 100.0)
+            classical_scores.append(pred_c.risk_score / 100.0)
             classical_times.append(t_c)
 
-            # 2. Hybrid Quantum-Classical Pipeline
+            # 2. Hybrid Quantum-Classical Pipeline (Classical + Qiskit 4-Qubit Statevector Escalation on Borderline)
             t0_h = time.perf_counter()
-            pred = fraud_engine.predict(payload)
+            pred_h = fraud_engine.predict(payload, enable_quantum=True)
             t_h = (time.perf_counter() - t0_h) * 1000.0
-            hybrid_scores.append(pred.risk_score / 100.0)
+            hybrid_scores.append(pred_h.risk_score / 100.0)
             hybrid_times.append(t_h)
-            if pred.quantum_active and pred.quantum_escalation and pred.quantum_escalation.get("quantum_execution_required"):
+            if pred_h.quantum_active and pred_h.quantum_escalation and pred_h.quantum_escalation.get("circuit_executed"):
                 quantum_escalations_count += 1
 
         classical_scores = np.array(classical_scores)
         hybrid_scores = np.array(hybrid_scores)
 
-        # Binary predictions at threshold 0.50
+        # Binary predictions at standard decision threshold 0.50 (risk score >= 50.0)
         c_preds = (classical_scores >= 0.50).astype(int)
         h_preds = (hybrid_scores >= 0.50).astype(int)
 
@@ -132,6 +132,7 @@ class QuantumBenchmarkService:
         c_auc = round(float(roc_auc_score(y_true, classical_scores)), 3)
         c_prauc = round(float(average_precision_score(y_true, classical_scores)), 3)
         c_latency = round(float(np.mean(classical_times)), 2)
+        c_cm = confusion_matrix(y_true, c_preds).tolist()
 
         h_prec = round(float(precision_score(y_true, h_preds, zero_division=0)), 3)
         h_rec = round(float(recall_score(y_true, h_preds, zero_division=0)), 3)
@@ -139,6 +140,7 @@ class QuantumBenchmarkService:
         h_auc = round(float(roc_auc_score(y_true, hybrid_scores)), 3)
         h_prauc = round(float(average_precision_score(y_true, hybrid_scores)), 3)
         h_latency = round(float(np.mean(hybrid_times)), 2)
+        h_cm = confusion_matrix(y_true, h_preds).tolist()
 
         return {
             "dataset_info": {
@@ -151,26 +153,29 @@ class QuantumBenchmarkService:
             },
             "comparison": {
                 "classical_only": {
-                    "architecture": "Supervised XGBoost + Random Forest + Tree Isolation",
+                    "architecture": "Classical Pipeline (XGBoost + Random Forest + Isolation Forest, Quantum Deactivated)",
                     "precision": c_prec,
                     "recall": c_rec,
                     "f1_score": c_f1,
                     "roc_auc": c_auc,
                     "pr_auc": c_prauc,
+                    "confusion_matrix": c_cm,
                     "mean_latency_ms": c_latency,
                     "quantum_execution": False
                 },
                 "hybrid_quantum_classical": {
-                    "architecture": "Classical ML Ensemble + Qiskit 4-Qubit ZZFeatureMap Kernel Escalation",
+                    "architecture": "Hybrid Pipeline (Classical Ensemble + Qiskit 4-Qubit ZZFeatureMap Kernel Escalation)",
                     "precision": h_prec,
                     "recall": h_rec,
                     "f1_score": h_f1,
                     "roc_auc": h_auc,
                     "pr_auc": h_prauc,
+                    "confusion_matrix": h_cm,
                     "mean_latency_ms": h_latency,
                     "quantum_execution": True,
-                    "feature_map": "ZZFeatureMap (reps=2, entanglement='full')",
-                    "simulator": "AerSimulator Statevector"
+                    "feature_map": "ZZFeatureMap (reps=2, entanglement='linear')",
+                    "simulator": "Qiskit FidelityStatevectorKernel (CPU Statevector Simulation)",
+                    "execution_mode": "SIMULATION"
                 }
             },
             "deltas": {

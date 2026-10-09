@@ -98,6 +98,18 @@ class FraudDetectionEngine:
             if os.path.exists(ens_path):
                 self.ensemble = joblib.load(ens_path)
 
+            pca_path = os.path.join(self.artifacts_dir, "quantum", "pca_transformer.joblib")
+            if os.path.exists(pca_path):
+                self.quantum_pca = joblib.load(pca_path)
+            else:
+                self.quantum_pca = None
+
+            q_scaler_path = os.path.join(self.artifacts_dir, "quantum", "minmax_scaler.joblib")
+            if os.path.exists(q_scaler_path):
+                self.quantum_scaler = joblib.load(q_scaler_path)
+            else:
+                self.quantum_scaler = None
+
             self.quantum_engine = QuantumKernelEngine(num_qubits=4, map_type="zz", reps=2)
         except Exception as e:
             print(f"Warning loading artifacts in FraudDetectionEngine: {e}")
@@ -194,7 +206,7 @@ class FraudDetectionEngine:
             details=details
         )
 
-    def predict(self, txn: TransactionPayload) -> PredictionResponse:
+    def predict(self, txn: TransactionPayload, enable_quantum: bool = True) -> PredictionResponse:
         timings: List[StageTiming] = []
         model_scores: Dict[str, float] = {}
         signal_summary: List[SignalSummaryItem] = []
@@ -208,7 +220,7 @@ class FraudDetectionEngine:
         velocity_details = velocity_engine.compute_velocity(txn_dict)
         user_txns = velocity_engine.user_history.get(txn.user_id, [])
         mule_behavior = graph_service.analyze_mule_behavior(txn.user_id, user_txns)
-        
+
         # Sliced history excluding the current appended txn for pre-fraud checks
         history_before_current = user_txns[:-1] if user_txns else []
         pre_fraud = pre_fraud_detector.detect_pre_fraud_sequence(txn_dict, history_before_current)
@@ -245,7 +257,7 @@ class FraudDetectionEngine:
         # Stage 2: Heterogeneous Classical & Deep Anomaly Array
         # ---------------------------------------------------------
         t0 = time.time()
-        
+
         # 2a. Random Forest
         if self.rf is not None:
             model_scores["random_forest"] = float(self.rf.predict_proba(X_scaled)[0, 1])
@@ -340,22 +352,69 @@ class FraudDetectionEngine:
         quantum_active = False
         quantum_exec_mode = "SIMULATION"
 
-        caps = probe_system_capabilities()
-        if caps.get("qiskit", {}).get("status") == "AVAILABLE":
-            quantum_active = True
-            if self.qsvc is not None and hasattr(self.qsvc, "predict_single"):
-                try:
-                    q_prob, _ = self.qsvc.predict_single(X_scaled[:, :4])
-                    model_scores["quantum_qsvc"] = round(q_prob, 4)
-                except Exception:
-                    model_scores["quantum_qsvc"] = round(float((txn.amount > 50000) * 0.8), 4)
-            else:
-                model_scores["quantum_qsvc"] = round(min(1.0, (txn.amount / 100000.0) * 0.40 + (txn.location_score) * 0.60), 4)
+        if enable_quantum:
+            caps = probe_system_capabilities()
+            if caps.get("qiskit", {}).get("status") == "AVAILABLE":
+                quantum_active = True
 
-            model_scores["quantum_anomaly"] = round(min(1.0, (txn.device_score * 0.40 + txn.location_score * 0.40 + (txn.amount > 50000) * 0.20)), 4)
+                # Prepare exact 4-dimensional quantum feature representation matching training pipeline
+                if self.quantum_pca is not None and self.quantum_scaler is not None:
+                    try:
+                        df_pca_in = pd.DataFrame(X_scaled, columns=feature_names)
+                        X_pca = self.quantum_pca.transform(df_pca_in)
+                        X_q = self.quantum_scaler.transform(X_pca)
+                    except Exception:
+                        X_q = X_scaled[:, :4]
+                else:
+                    X_q = X_scaled[:, :4]
+
+                if escalation_info.get("quantum_execution_required") and self.qsvc is not None and hasattr(self.qsvc, "predict_single"):
+                    try:
+                        raw_prob, _ = self.qsvc.predict_single(X_q)
+                        # Genuine QSVC predicted probability from SVM sigmoid model on quantum kernel
+                        model_scores["quantum_qsvc"] = round(raw_prob, 4)
+                        q_executed = True
+                        escalation_info["circuit_executed"] = True
+                        escalation_info["output_type"] = "QSVC_CALIBRATED_PROBABILITY"
+                        escalation_info["raw_score"] = round(raw_prob, 4)
+                        # Validation-selected decision threshold tau* = 0.1083 (derived on validation split, untouched test F1=0.2667)
+                        escalation_info["qsvc_threshold"] = 0.1083
+                        escalation_info["fusion_rule"] = "DEFENSIVE_BOOST_ONLY (+15 risk points if score >= 0.1083, +0 if below)"
+                        escalation_info["backend_used"] = "Qiskit FidelityStatevectorKernel (CPU Statevector Simulation)"
+                        escalation_info["execution_mode"] = "SIMULATION"
+                        escalation_info["q_decision_vote"] = "FRAUD" if raw_prob >= 0.1083 else "GENUINE"
+                    except Exception as e:
+                        model_scores["quantum_qsvc"] = model_scores["xgboost"]
+                        q_executed = False
+                        escalation_info["circuit_executed"] = False
+                        escalation_info["quantum_error"] = str(e)
+                        escalation_info["execution_mode"] = "UNAVAILABLE"
+                        escalation_info["q_decision_vote"] = "ERROR_FALLBACK"
+                else:
+                    # Bypassed for latency optimization: use classical score
+                    model_scores["quantum_qsvc"] = model_scores["xgboost"]
+                    escalation_info["circuit_executed"] = False
+                    escalation_info["execution_mode"] = "NOT_EXECUTED"
+                    escalation_info["backend_used"] = "NONE (Classical Bypassed)"
+                    escalation_info["q_decision_vote"] = "BYPASS"
+
+                model_scores["quantum_anomaly"] = round(min(1.0, (txn.device_score * 0.40 + txn.location_score * 0.40 + (txn.amount > 50000) * 0.20)), 4)
+            else:
+                quantum_active = False
+                quantum_exec_mode = "OFFLINE"
+                model_scores["quantum_qsvc"] = model_scores["xgboost"]
+                model_scores["quantum_anomaly"] = model_scores["autoencoder_anomaly"]
+                escalation_info["circuit_executed"] = False
+                escalation_info["execution_mode"] = "UNAVAILABLE"
+                escalation_info["backend_used"] = "NONE"
         else:
             quantum_active = False
-            quantum_exec_mode = "OFFLINE (Classical Fallback)"
+            quantum_exec_mode = "CLASSICAL_ONLY"
+            escalation_info["quantum_execution_required"] = False
+            escalation_info["circuit_executed"] = False
+            escalation_info["execution_mode"] = "NOT_EXECUTED"
+            escalation_info["backend_used"] = "NONE"
+            escalation_info["q_decision_vote"] = "DEACTIVATED"
             model_scores["quantum_qsvc"] = model_scores["xgboost"]
             model_scores["quantum_anomaly"] = model_scores["autoencoder_anomaly"]
 
@@ -445,9 +504,28 @@ class FraudDetectionEngine:
         ]
 
         base_score = round(sum(c.weighted_impact for c in f_contribs), 1)
-        risk_score = base_score
+        risk_score = max(0.0, min(100.0, base_score))
         triggered_rules = []
         det_adjustments = []
+
+        # Explicit Deterministic Quantum Escalation Adjustment
+        if escalation_info.get("circuit_executed"):
+            if escalation_info.get("q_decision_vote") == "FRAUD":
+                risk_score = min(100.0, risk_score + 15.0)
+                triggered_rules.append("RULE_QUANTUM_KERNEL_ESCALATION_FRAUD")
+                det_adjustments.append({
+                    "rule": "QUANTUM_KERNEL_ESCALATION_FRAUD",
+                    "penalty": 15.0,
+                    "description": f"4-Qubit ZZFeatureMap Quantum Kernel classified ambiguous transaction as FRAUD (raw QSVC prob: {model_scores.get('quantum_qsvc', 0.0):.4f} >= tau* 0.1083)."
+                })
+            elif escalation_info.get("q_decision_vote") == "GENUINE":
+                # Defensive security policy: No negative clearance deduction (-10).
+                # An escalation classifier with moderate recall must not suppress classical risk indicators.
+                det_adjustments.append({
+                    "rule": "QUANTUM_KERNEL_BENIGN_BASELINE_PRESERVED",
+                    "penalty": 0.0,
+                    "description": f"4-Qubit ZZFeatureMap Quantum Kernel did not detect fraud geometry (raw QSVC score: {model_scores.get('quantum_qsvc', 0.0):.4f} < tau* 0.1083). Preserving classical baseline risk without negative clearance to prevent false negative risk suppression."
+                })
 
         if cross_consistency.status == "INCONSISTENT":
             # Significant cross-signal inconsistency boosts risk
@@ -488,7 +566,7 @@ class FraudDetectionEngine:
                 "penalty": split_penalty,
                 "description": f"Transaction structuring detected ({splitting.get('pattern_type')})."
             })
-            
+
         if mule_behavior.get("is_mule"):
             mule_penalty = 35.0
             risk_score = min(100.0, risk_score + mule_penalty)
@@ -498,7 +576,7 @@ class FraudDetectionEngine:
                 "penalty": mule_penalty,
                 "description": f"Mule account behavior inferred: {', '.join(mule_behavior.get('reasons', []))}."
             })
-            
+
         if pre_fraud.risk_contribution > 0.0:
             risk_score = min(100.0, risk_score + pre_fraud.risk_contribution)
             triggered_rules.append(f"RULE_{pre_fraud.warning_type}")
@@ -602,7 +680,7 @@ class FraudDetectionEngine:
             description=f"{velocity_details['status']} ({velocity_details['txns_in_1min']} txns in last 1m, geo velocity {velocity_details['geo_jump_km_h']} km/h, 1h count {txn.velocity_1h})",
             score_contribution=float(velocity_details["velocity_risk_score"]) * 0.25
         ))
-        
+
         if splitting and splitting.get("detected"):
             split_conf = splitting.get("confidence", 0.0)
             signal_summary.append(SignalSummaryItem(
@@ -613,7 +691,7 @@ class FraudDetectionEngine:
                 description=f"{splitting.get('pattern_type')} detected: {splitting.get('repeated_amounts')} repeated/sub-threshold txns. Indicative of smurfing.",
                 score_contribution=round(split_conf * 30.0, 1)
             ))
-            
+
         if mule_behavior.get("is_mule"):
             signal_summary.append(SignalSummaryItem(
                 category="BEHAVIORAL",
@@ -623,7 +701,7 @@ class FraudDetectionEngine:
                 description=f"{mule_behavior.get('label')}: {', '.join(mule_behavior.get('reasons', []))} (In/Out Ratio: {mule_behavior.get('in_out_ratio')})",
                 score_contribution=35.0
             ))
-            
+
         if pre_fraud.risk_contribution > 0.0:
             signal_summary.append(SignalSummaryItem(
                 category="BEHAVIORAL",
@@ -665,13 +743,16 @@ class FraudDetectionEngine:
         ))
 
         # 6. Quantum Escalation
+        q_executed_flag = bool(escalation_info.get("circuit_executed"))
+        q_vote = escalation_info.get("q_decision_vote")
+        q_contrib = 15.0 if (q_executed_flag and q_vote == "FRAUD") else 0.0
         signal_summary.append(SignalSummaryItem(
             category="QUANTUM",
             name="Qiskit 4-Qubit Quantum Kernel",
-            status="OBSERVED" if quantum_active else "UNAVAILABLE",
-            severity="MODERATE" if escalation_info.get("quantum_execution_required") else "LOW",
-            description=f"{escalation_info.get('quantum_escalation_status')} ({escalation_info.get('escalation_reason')})",
-            score_contribution=15.0 if escalation_info.get("quantum_execution_required") else 0.0
+            status="OBSERVED" if q_executed_flag else ("UNAVAILABLE" if not quantum_active else "NOT_EXECUTED"),
+            severity="HIGH" if (q_executed_flag and q_vote == "FRAUD") else ("MODERATE" if escalation_info.get("quantum_execution_required") else "LOW"),
+            description=f"{escalation_info.get('quantum_escalation_status')} [Mode: {escalation_info.get('execution_mode', 'NOT_EXECUTED')}] - {escalation_info.get('escalation_reason')}",
+            score_contribution=q_contrib
         ))
 
         risk_factors = []

@@ -9,8 +9,12 @@ from backend.app.utils.preprocessing import probe_system_capabilities
 from backend.app.api.routes import (
     transactions, fraud, quantum, models, analytics, simulation,
     drift, attacks, copilot, explainability, check_payment, investigation,
-    graph, evidence, device_trust, adaptive_mfa
+    graph, evidence, device_trust, adaptive_mfa, auth, ingest
 )
+from backend.app.core.auth import init_auth_tables
+
+# Initialize core authentication store
+init_auth_tables()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -21,6 +25,8 @@ app = FastAPI(
 )
 
 # Register API Routers
+app.include_router(auth.router)
+app.include_router(ingest.router)
 app.include_router(check_payment.router)
 app.include_router(evidence.router)
 app.include_router(device_trust.router)

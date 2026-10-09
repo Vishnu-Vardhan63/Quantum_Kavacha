@@ -101,15 +101,18 @@ def test_activity_path_graph_linkage():
 
 def test_copilot_temporal_reasoning_grounding():
     """Verify that Copilot answers temporal queries using exact attack chain data without hallucinating."""
-    res1 = copilot_service.answer_query("What happened in this attack chain?", {"txn_id": "QF-20261007-49910"})
-    assert "Chronological" in res1["answer"] or "Reconstructed" in res1["answer"]
-    assert res1["evidence_confidence"] > 0.9
+    from unittest.mock import patch
+    from backend.app.core.config import settings
+    with patch.object(settings, "GROQ_API_KEY", ""):
+        res1 = copilot_service.answer_query("What happened in this attack chain?", {"txn_id": "QF-20261007-49910"})
+        assert "Chronological" in res1["answer"] or "Reconstructed" in res1["answer"]
+        assert res1["evidence_confidence"] > 0.9
 
-    res2 = copilot_service.answer_query("Where was the first warning sign?", {"txn_id": "QF-20261007-49910"})
-    assert "First Observed Warning" in res2["answer"]
+        res2 = copilot_service.answer_query("Where was the first warning sign?", {"txn_id": "QF-20261007-49910"})
+        assert "First Observed Warning" in res2["answer"]
 
-    res3 = copilot_service.answer_query("How could this attack have been interrupted?", {"txn_id": "QF-20261007-49910"})
-    assert "Intervention" in res3["answer"] or "Breakpoint" in res3["answer"]
+        res3 = copilot_service.answer_query("How could this attack have been interrupted?", {"txn_id": "QF-20261007-49910"})
+        assert "Intervention" in res3["answer"] or "Breakpoint" in res3["answer"]
 
 def test_nonexistent_case_returns_404():
     """Verify requesting an invalid case ID returns 404."""
