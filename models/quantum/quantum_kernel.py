@@ -73,9 +73,14 @@ class QuantumKernelEngine:
         Uses disk cache if available.
         """
         data_hash = self._get_data_hash(X1, X2)
-        cache_file = os.path.join(self.cache_dir, f"kernel_{data_hash}.npy")
+        valid_cache_dir = os.path.join(project_root, "model_artifacts", "quantum", "cache")
+        try:
+            os.makedirs(valid_cache_dir, exist_ok=True)
+            cache_file = os.path.join(valid_cache_dir, f"kernel_{data_hash}.npy")
+        except Exception:
+            cache_file = None
         
-        if os.path.exists(cache_file):
+        if cache_file and os.path.exists(cache_file):
             return np.load(cache_file)
             
         # Compute kernel using Qiskit FidelityStatevectorKernel or fallback
@@ -91,7 +96,11 @@ class QuantumKernelEngine:
             
         # Ensure numerical precision & bounds [0, 1]
         K = np.clip(K, 0.0, 1.0)
-        np.save(cache_file, K)
+        if cache_file:
+            try:
+                np.save(cache_file, K)
+            except Exception:
+                pass
         return K
 
     def verify_kernel_matrix(self, K: np.ndarray, tol: float = 1e-4) -> Dict[str, Any]:

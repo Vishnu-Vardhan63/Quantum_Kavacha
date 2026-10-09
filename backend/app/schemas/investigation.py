@@ -1,3 +1,4 @@
+import time
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -86,3 +87,29 @@ class InvestigationCase(BaseModel):
     analyst_notes: List[AnalystNote] = Field(default_factory=list)
     decision_history: CaseDecisionRecord
     pre_fraud_warning: Optional[Dict[str, Any]] = None
+    audit_chain: List[Dict[str, Any]] = Field(default_factory=list)
+
+class AuditChainEntry(BaseModel):
+    index: int = Field(default=0)
+    timestamp: float = Field(default_factory=time.time)
+    event: str
+    actor: str = "SYSTEM"
+    details: str
+    prev_hash: str = "0" * 64
+    entry_hash: str
+
+class CaseCreateRequest(BaseModel):
+    title: Optional[str] = None
+    input_type: str = Field(default="AUTO", description="AUTO | QR | SCREENSHOT | LINK | FILE | TRANSACTION")
+    payload: Optional[str] = Field(default=None, description="Decoded URI, raw text, or URL")
+    image_base64: Optional[str] = Field(default=None, description="Base64 encoded image or file data")
+    filename: Optional[str] = Field(default=None, description="Uploaded file name")
+    transaction_context: Optional[Dict[str, Any]] = Field(default=None, description="Associated transaction context")
+    allow_external_threat_lookup: bool = True
+    external_file_submission_consent: bool = False
+    analyst_note: Optional[str] = None
+
+class CaseAnalyzeRequest(BaseModel):
+    re_run_all: bool = False
+    analyzer_subset: Optional[List[str]] = None
+    additional_transaction_context: Optional[Dict[str, Any]] = None

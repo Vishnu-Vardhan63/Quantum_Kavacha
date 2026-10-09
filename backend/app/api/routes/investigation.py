@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from backend.app.schemas.investigation import (
     InvestigationCase, InvestigationCaseSummary, AnalystNote,
-    AnalystDecisionRequest
+    AnalystDecisionRequest, CaseCreateRequest, CaseAnalyzeRequest
 )
 from backend.app.schemas.attack_chain import AttackChainResponse
 from backend.app.schemas.response import ResponseCenterData, ActionAuditEntry
@@ -139,3 +139,35 @@ async def export_case_report(case_id: str = Path(...)):
     if not dossier:
         raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
     return dossier
+
+@router.post("/cases", response_model=InvestigationCase, summary="Create New Investigation Case Directly from Evidence")
+async def create_case(req: CaseCreateRequest):
+    """Directly creates and indexes a unified investigation case from uploaded file, QR, screenshot, URL, or context."""
+    try:
+        return investigation_service.create_case_from_evidence(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Case creation error: {str(e)}")
+
+@router.post("/cases/{case_id}/analyze", response_model=InvestigationCase, summary="Re-Analyze or Augment Case Evidence")
+async def analyze_case(
+    case_id: str = Path(...),
+    req: CaseAnalyzeRequest = ...
+):
+    """Re-executes analyzers on case evidence without duplicating records."""
+    updated = investigation_service.retry_or_analyze_case(case_id, req)
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+    return updated
+
+@router.get("/cases/{case_id}/audit-verify", summary="Verify Tamper-Evident SHA-256 Audit Chain")
+async def verify_audit_chain(case_id: str = Path(...)):
+    """Cryptographically verifies every block in the case's SHA-256 audit chain from genesis to head."""
+    res = investigation_service.verify_case_audit_chain(case_id)
+    if not res.get("is_valid") and "error" in res:
+        raise HTTPException(status_code=404, detail=res["error"])
+    return res
+
+@router.post("/reset", summary="Reset Investigation Case Store to Deterministic Demo State")
+async def reset_cases():
+    """Resets the active case store to clean initial deterministic evaluation fixtures."""
+    return investigation_service.reset_demo_cases()

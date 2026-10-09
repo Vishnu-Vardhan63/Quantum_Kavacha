@@ -50,8 +50,8 @@ class TransactionVelocityEngine:
 
         user_txns = self.user_history[user_id]
         
-        # Clean older history (> 3600 seconds)
-        user_txns = [t for t in user_txns if (now - t["time"]) <= 3600]
+        # Clean older history (> 30 days to support pre-fraud baseline)
+        user_txns = [t for t in user_txns if (now - t["time"]) <= 86400 * 30]
         self.user_history[user_id] = user_txns
 
         # 1-minute and 10-second counts
@@ -71,7 +71,9 @@ class TransactionVelocityEngine:
         impossible_travel = False
         if user_txns:
             last_txn = user_txns[-1]
-            dist_km = self.calculate_haversine_distance(last_txn["lat"], last_txn["lon"], lat, lon)
+            last_lat = float(last_txn.get("lat", 19.0760))
+            last_lon = float(last_txn.get("lon", 72.8777))
+            dist_km = self.calculate_haversine_distance(last_lat, last_lon, lat, lon)
             time_diff_hours = (now - last_txn["time"]) / 3600.0
             if time_diff_hours > 0:
                 geo_jump_km_h = dist_km / time_diff_hours

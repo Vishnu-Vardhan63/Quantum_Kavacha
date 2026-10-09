@@ -1,16 +1,28 @@
 import os
 from pydantic import BaseModel, Field
 
+try:
+    from dotenv import load_dotenv
+    env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.env"))
+    if os.path.exists(env_file):
+        load_dotenv(env_file)
+except ImportError:
+    pass
+
 class Settings(BaseModel):
     PROJECT_NAME: str = "QUANTUM KAVACHA"
     VERSION: str = "2.0.0"
     API_PREFIX: str = "/api"
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost:8000", "*"]
+    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://localhost:8000", "*"]
     
     # Quantum Hardware & Token
     IBM_QUANTUM_TOKEN: str = Field(default_factory=lambda: os.getenv("IBM_QUANTUM_TOKEN", ""))
     QUANTUM_MODE_DEFAULT: str = "SIMULATION" # SIMULATION, NOISY SIMULATION, or HARDWARE
     
+    # Groq Conversational AI Copilot
+    GROQ_API_KEY: str = Field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
+    GROQ_MODEL: str = Field(default_factory=lambda: os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"))
+
     # Gemini Multimodal Evidence Verification
     GEMINI_API_KEY: str = Field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
     GEMINI_MODEL: str = Field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))

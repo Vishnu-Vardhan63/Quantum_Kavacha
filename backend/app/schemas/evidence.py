@@ -1,6 +1,15 @@
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
+class FileIntegrityMetadata(BaseModel):
+    sha256_hash: Optional[str] = Field(default=None, description="Cryptographic SHA-256 hash of original image binary")
+    detected_format: Optional[str] = Field(default=None, description="Actual file format detected from magic bytes (PNG, JPEG, WEBP, etc.)")
+    mime_type: Optional[str] = Field(default=None, description="MIME type derived from magic bytes")
+    file_size_bytes: Optional[int] = Field(default=None, description="Size of file in bytes")
+    magic_bytes_valid: bool = Field(default=True, description="True if magic bytes match a supported image format")
+    validation_error: Optional[str] = Field(default=None, description="Error reason if file validation failed")
+    metadata_tamper_warning: Optional[str] = Field(default=None, description="EXIF or software editing tags indicating manipulation")
+
 class VisualAssessment(BaseModel):
     ai_generation_likelihood: Optional[float] = Field(default=None, description="Probabilistic likelihood percentage (0-100) or null if indeterminate")
     ai_generation_assessment: str = Field(default="INCONCLUSIVE", description="LOW INDICATION | MODERATE INDICATION | HIGH INDICATION | INCONCLUSIVE | UNAVAILABLE")
@@ -50,14 +59,26 @@ class EvidenceVerificationRequest(BaseModel):
 
 class EvidenceVerificationResponse(BaseModel):
     provider: str = Field(default="Gemini Multimodal", description="AI Provider identifier")
-    analysis_status: str = Field(default="COMPLETED", description="COMPLETED | UNAVAILABLE | PARTIAL | ERROR")
+    analysis_status: str = Field(default="COMPLETED", description="COMPLETED | UNAVAILABLE | PARTIAL | ERROR | FALLBACK")
     status_message: Optional[str] = Field(default=None, description="Status detail message or error reason")
+    file_integrity: FileIntegrityMetadata = Field(default_factory=FileIntegrityMetadata, description="File signature, magic bytes, SHA-256 hash")
     visual_assessment: VisualAssessment = Field(default_factory=VisualAssessment)
     extracted_fields: ExtractedPaymentFields = Field(default_factory=ExtractedPaymentFields)
+    ocr_status: str = Field(default="UNAVAILABLE", description="EXTRACTED | NO_TEXT_DETECTED | UNAVAILABLE")
+    ocr_text: Optional[str] = Field(default=None, description="Raw OCR text extracted from image")
     evidence_checks: List[EvidenceCheck] = Field(default_factory=list)
     qr_cross_check: QRCrossCheck = Field(default_factory=QRCrossCheck)
     overall_evidence_confidence: str = Field(default="HIGH", description="HIGH | MEDIUM | LOW | UNAVAILABLE")
     system_derived_consistency_score: Optional[float] = Field(default=None, description="Derived overall consistency score (0-100) or null")
+    final_verdict: str = Field(default="INCONCLUSIVE", description="SUSPICIOUS | INCONCLUSIVE | NO_ISSUES_DETECTED")
+    settlement_status: str = Field(
+        default="UNVERIFIED_PENDING_SETTLEMENT",
+        description="Visual inspection alone does not confirm bank settlement or fund reception"
+    )
+    settlement_disclaimer: str = Field(
+        default="Screenshot / visual artifact inspection does not prove fund transfer or settlement. Confirmation requires banking gateway integration.",
+        description="Settlement boundary disclaimer"
+    )
     observations: List[str] = Field(default_factory=list, description="Observed evidence bullet points")
     limitations: List[str] = Field(default_factory=list, description="Forensic and environment limitations")
     provider_info: Dict[str, Any] = Field(default_factory=dict, description="Metadata regarding model version and execution mode")

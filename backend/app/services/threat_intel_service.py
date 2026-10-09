@@ -25,6 +25,12 @@ try:
 except ImportError:
     HAS_WHOIS = False
 
+try:
+    import idna
+    HAS_IDNA = True
+except ImportError:
+    HAS_IDNA = False
+
 
 class ThreatIntelligenceService:
     """
@@ -266,7 +272,11 @@ class ThreatIntelligenceService:
             "lookalike_brands": [],
             "excessive_encoding": False,
             "is_ip_host": False,
-            "is_private_ip": False
+            "is_private_ip": False,
+            "has_punycode": False,
+            "punycode_decoded": None,
+            "has_embedded_credentials": False,
+            "has_path_traversal": False
         }
 
         if not raw_url or not isinstance(raw_url, str):
@@ -276,7 +286,7 @@ class ThreatIntelligenceService:
         lower_raw = raw_trimmed.lower()
 
         # Check for dangerous or unapproved URL schemes first
-        for dangerous_prefix in ["javascript:", "data:", "file:", "ftp:", "ws:", "wss:"]:
+        for dangerous_prefix in ["javascript:", "data:", "file:", "ftp:", "ws:", "wss:", "gopher:", "ldap:", "dict:"]:
             if lower_raw.startswith(dangerous_prefix):
                 return False, f"Dangerous URL scheme rejected ({dangerous_prefix.rstrip(':')}).", meta
 
@@ -295,6 +305,17 @@ class ThreatIntelligenceService:
         # Scheme security
         if scheme not in ["http", "https"]:
             return False, f"Dangerous or unsupported URL scheme '{scheme}'. Only HTTP and HTTPS are permitted.", meta
+
+        # Embedded credentials detection (e.g. https://user:pass@evil.com or https://legitbank.com@evil.com)
+        if parsed.username or parsed.password or ("@" in (parsed.netloc or "")):
+            meta["has_embedded_credentials"] = True
+            return False, "Security Blocked: URL contains embedded credentials or deceptive '@' authority separator.", meta
+
+        # Path traversal & null byte detection
+        path_lower = (parsed.path or "").lower()
+        if "%2e%2e" in path_lower or "/../" in path_lower or ".." in path_lower or "%00" in raw_trimmed or "\x00" in raw_trimmed:
+            meta["has_path_traversal"] = True
+            return False, "Security Blocked: URL path contains directory traversal sequences or null byte.", meta
 
         try:
             hostname = parsed.hostname
@@ -327,25 +348,42 @@ class ThreatIntelligenceService:
             meta["is_private_ip"] = True
             return False, f"SSRF Blocked: Localhost destination '{hostname}' rejected.", meta
 
+        # Punycode / IDN Homograph Attack detection
+        host_clean = hostname.lower()
+        if "xn--" in host_clean:
+            meta["has_punycode"] = True
+            if HAS_IDNA:
+                try:
+                    decoded_punycode = idna.decode(host_clean)
+                    meta["punycode_decoded"] = decoded_punycode
+                except Exception:
+                    meta["punycode_decoded"] = "DECODE_ERROR"
+            else:
+                meta["punycode_decoded"] = host_clean
+
         # Suspicious TLD check
         for tld in self.SUSPICIOUS_TLDS:
-            if hostname.lower().endswith(tld):
+            if host_clean.endswith(tld):
                 meta["has_suspicious_tld"] = True
                 break
 
-        # Brand Lookalike Check
-        host_clean = hostname.lower()
+        # Brand Lookalike Check (including decoded punycode check)
+        check_targets = [host_clean]
+        if meta.get("punycode_decoded") and meta["punycode_decoded"] != "DECODE_ERROR":
+            check_targets.append(str(meta["punycode_decoded"]).lower())
+
         matched_brands = []
         for brand in self.BRAND_KEYWORDS:
-            if brand in host_clean:
-                # If brand is in domain but domain is not the official brand domain
-                is_official = False
-                for official_suffix in [f"{brand}.com", f"{brand}.in", f"{brand}.org", f"{brand}.net", f"{brand}.co.in"]:
-                    if host_clean == official_suffix or host_clean.endswith("." + official_suffix):
-                        is_official = True
-                        break
-                if not is_official:
-                    matched_brands.append(brand)
+            for target in check_targets:
+                if brand in target:
+                    # If brand is in domain but domain is not the official brand domain
+                    is_official = False
+                    for official_suffix in [f"{brand}.com", f"{brand}.in", f"{brand}.org", f"{brand}.net", f"{brand}.co.in"]:
+                        if target == official_suffix or target.endswith("." + official_suffix):
+                            is_official = True
+                            break
+                    if not is_official and brand not in matched_brands:
+                        matched_brands.append(brand)
 
         meta["lookalike_brands"] = matched_brands
 

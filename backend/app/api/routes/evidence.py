@@ -1,6 +1,6 @@
 import base64
 from typing import Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from backend.app.schemas.evidence import (
     EvidenceVerificationRequest, EvidenceVerificationResponse
 )
@@ -10,13 +10,14 @@ from backend.app.services.payment_forensics import payment_forensics_service
 router = APIRouter(prefix="/api/evidence", tags=["Gemini Multimodal Evidence Verification"])
 
 @router.post("/analyze", response_model=EvidenceVerificationResponse, summary="Analyze Multimodal Payment Evidence with Gemini")
-async def analyze_evidence_json(req: EvidenceVerificationRequest):
+def analyze_evidence_json(req: EvidenceVerificationRequest):
     """
     Analyzes uploaded payment evidence (Screenshot, QR Image, Receipt):
+    - File integrity, magic bytes, SHA-256 hash
     - Visual authenticity & synthetic/AI-generation assessment
     - Manipulation indicators (font mismatches, duplicated elements, alignment flaws)
     - Semantic field extraction (amount, recipient VPA, txn ID, bank/app)
-    - Cross-verification against QR payload or declared context
+    - Cross-verification against RapidOCR and QR payload
     """
     try:
         decoded_qr = None
@@ -37,6 +38,14 @@ async def analyze_evidence_json(req: EvidenceVerificationRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Evidence verification error: {str(e)}")
+
+@router.post("/verify", response_model=EvidenceVerificationResponse, summary="Verify Multimodal Payment Evidence")
+def verify_evidence_json(req: EvidenceVerificationRequest):
+    """
+    Direct endpoint for evidence verification matching /api/evidence/verify contract.
+    Identical logic to /api/evidence/analyze for backward and forward compatibility.
+    """
+    return analyze_evidence_json(req)
 
 @router.post("/upload", response_model=EvidenceVerificationResponse, summary="Upload & Analyze Payment Evidence Multipart")
 async def upload_evidence(
