@@ -11,7 +11,7 @@ import {
   Sliders, ArrowUpRight, QrCode, Image as ImageIcon, Link as LinkIcon,
   Upload, CheckCircle, AlertCircle, AlertOctagon, RotateCcw,
   FileText, Download, User, Smartphone, Globe, CreditCard, Clock,
-  Edit3, ChevronDown, ChevronUp, Copy, Sparkles, ExternalLink
+  Edit3, ChevronDown, ChevronUp, Copy, Sparkles, ExternalLink, Server
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import QuantumCore3D from "./QuantumCore3D";
