@@ -11,6 +11,7 @@ import urllib.parse
 import urllib.request
 from typing import Dict, Any, List, Optional, Tuple
 
+import unicodedata
 from backend.app.core.config import settings
 
 try:
@@ -139,6 +140,64 @@ class ThreatIntelligenceService:
             "detected_type": detected_type,
             "is_executable": is_executable,
             "is_high_risk_extension": is_high_risk_ext
+        }
+
+    def sanitize_and_normalize_text(self, text: str) -> Dict[str, Any]:
+        """
+        Normalize text payload, detect zero-width characters, homoglyphs, and non-printable sequences.
+        Ensures strict NFKC normalization and prevents obfuscation without executing or mutating files.
+        """
+        if not text or not isinstance(text, str):
+            return {
+                "raw_text": text,
+                "normalized_text": "",
+                "has_zero_width": False,
+                "zero_width_count": 0,
+                "has_homoglyphs": False,
+                "contains_bidi_override": False
+            }
+
+        # Check for zero-width characters (e.g. \u200B, \u200C, \u200D, \uFEFF)
+        zero_width_chars = {'\u200b', '\u200c', '\u200d', '\ufeff', '\u2060', '\u180e'}
+        zero_width_count = sum(text.count(c) for c in zero_width_chars)
+        has_zero_width = zero_width_count > 0
+
+        # Check for Bidirectional Unicode Overrides (Right-to-Left Override spoofing)
+        bidi_chars = {'\u202e', '\u202d', '\u202a', '\u202b', '\u202c', '\u2066', '\u2067', '\u2068', '\u2069'}
+        has_bidi = any(c in text for c in bidi_chars)
+
+        # Remove zero-width characters for canonical evaluation
+        cleaned = "".join(ch for ch in text if ch not in zero_width_chars and ch not in bidi_chars)
+
+        # NFKC Unicode normalization
+        normalized = unicodedata.normalize("NFKC", cleaned)
+
+        # Check for mixed-script homoglyphs (e.g. Cyrillic letters looking like Latin: а, е, о, р, с)
+        has_homoglyphs = False
+        scripts = set()
+        for char in normalized:
+            if char.isalpha():
+                try:
+                    name = unicodedata.name(char, "")
+                    if "CYRILLIC" in name:
+                        scripts.add("CYRILLIC")
+                    elif "LATIN" in name:
+                        scripts.add("LATIN")
+                    elif "GREEK" in name:
+                        scripts.add("GREEK")
+                except Exception:
+                    pass
+        if len(scripts) > 1:
+            has_homoglyphs = True
+
+        return {
+            "raw_text": text,
+            "normalized_text": normalized,
+            "has_zero_width": has_zero_width,
+            "zero_width_count": zero_width_count,
+            "has_homoglyphs": has_homoglyphs,
+            "detected_scripts": list(scripts),
+            "contains_bidi_override": has_bidi
         }
 
     # =========================================================================

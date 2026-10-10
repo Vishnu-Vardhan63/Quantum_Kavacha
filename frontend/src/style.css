@@ -5,59 +5,73 @@
    ========================================================================== */
 
 :root {
-  /* Surface & Base Tokens */
-  --bg-app: #0B101E; /* Restrained Navy/Charcoal */
-  --bg-sidebar: #111827; /* Charcoal */
-  --bg-header: rgba(17, 24, 39, 0.95);
-  --bg-surface: #1F2937;
-  --bg-surface-elevated: #374151;
-  --bg-surface-subtle: rgba(255, 255, 255, 0.04);
-  --bg-card-hover: rgba(255, 255, 255, 0.06);
+  /* Surface & Base Tokens — Quantum Intelligence Operations */
+  --bg-app: #080C16; /* Deep Midnight */
+  --bg-sidebar: #0D1322; /* Midnight Navy */
+  --bg-header: rgba(13, 19, 34, 0.95);
+  --bg-surface: #141C2E;
+  --bg-surface-elevated: #1E283F;
+  --bg-surface-subtle: rgba(255, 255, 255, 0.035);
+  --bg-card-hover: rgba(255, 255, 255, 0.05);
 
   /* Border Tokens */
-  --border-subtle: rgba(255, 255, 255, 0.1);
-  --border-medium: rgba(255, 255, 255, 0.2);
-  --border-focus: #3B82F6;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.16);
+  --border-focus: #38BDF8;
 
   /* Typography Tokens */
-  --text-primary: #F9FAFB;
-  --text-secondary: #D1D5DB;
-  --text-muted: #9CA3AF;
-  --text-dim: #6B7280;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
 
-  /* Primary & Brand Accents */
-  --brand-primary: #2563EB; /* Controlled Blue */
-  --brand-primary-hover: #1D4ED8;
-  --brand-primary-subtle: rgba(37, 99, 235, 0.15);
-  --brand-indigo: #4F46E5;
-  --brand-indigo-subtle: rgba(79, 70, 229, 0.15);
-  --brand-cyan: #0891B2; /* Restrained Cyan */
+  /* Primary & Quantum Intelligence Accents */
+  --brand-primary: #38BDF8; /* Restrained Cyan */
+  --brand-primary-hover: #0EA5E9;
+  --brand-primary-subtle: rgba(56, 189, 248, 0.12);
+  --brand-violet: #818CF8; /* Quantum Violet */
+  --brand-violet-subtle: rgba(129, 140, 248, 0.12);
+  --brand-indigo: #6366F1;
+  --brand-indigo-subtle: rgba(99, 102, 241, 0.12);
+  --brand-cyan: #38BDF8;
 
   /* Calibrated Semantic Tokens */
-  --color-safe: #059669;
-  --color-safe-subtle: rgba(5, 150, 105, 0.15);
-  --color-safe-border: rgba(5, 150, 105, 0.3);
+  --color-safe: #10B981;
+  --color-safe-subtle: rgba(16, 185, 129, 0.12);
+  --color-safe-border: rgba(16, 185, 129, 0.25);
 
-  --color-caution: #D97706;
-  --color-caution-subtle: rgba(217, 119, 6, 0.15);
-  --color-caution-border: rgba(217, 119, 6, 0.3);
+  --color-caution: #F59E0B;
+  --color-caution-subtle: rgba(245, 158, 11, 0.12);
+  --color-caution-border: rgba(245, 158, 11, 0.25);
 
-  --color-high-risk: #DC2626;
-  --color-high-risk-subtle: rgba(220, 38, 38, 0.15);
-  --color-high-risk-border: rgba(220, 38, 38, 0.3);
+  --color-high-risk: #EF4444;
+  --color-high-risk-subtle: rgba(239, 68, 68, 0.14);
+  --color-high-risk-border: rgba(239, 68, 68, 0.28);
 
-  --color-critical: #991B1B;
-  --color-critical-subtle: rgba(153, 27, 27, 0.15);
-  --color-critical-border: rgba(153, 27, 27, 0.3);
+  --color-critical: #B91C1C;
+  --color-critical-subtle: rgba(185, 28, 28, 0.16);
+  --color-critical-border: rgba(185, 28, 28, 0.35);
 
   /* Spacing & Elevation */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
 }
 
 * {
@@ -2265,4 +2279,122 @@ code, pre {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+/* High-Risk Incident Audio Alert Banner */
+.high-risk-audio-alert-banner {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(30, 15, 20, 0.95) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.high-risk-alert-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.high-risk-alert-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.high-risk-alert-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.high-risk-alert-headline {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #fca5a5;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.high-risk-alert-meta {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.high-risk-alert-evidence {
+  font-size: 0.74rem;
+  color: #fecaca;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  margin-top: 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+  word-break: break-word;
+}
+
+.audio-controls-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.audio-control-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background: rgba(18, 26, 45, 0.75);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audio-control-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.audio-control-btn.active {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.audio-control-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.audio-status-pill {
+  font-size: 0.68rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
 }

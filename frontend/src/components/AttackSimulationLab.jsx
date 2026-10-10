@@ -19,7 +19,7 @@ import {
   Activity
 } from "lucide-react";
 
-export function AttackSimulationLab({ onSendToDetection }) {
+export function AttackSimulationLab({ fastApiBase = "", onSendToDetection }) {
   const [scenarioType, setScenarioType] = useState("PHISHING_PAYMENT_LURE");
   const [customTxn, setCustomTxn] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -27,6 +27,8 @@ export function AttackSimulationLab({ onSendToDetection }) {
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  const apiBase = fastApiBase ? fastApiBase.replace(/\/+$/, "") : "";
 
   // Auto-generate initial QR artifact on mount
   useEffect(() => {
@@ -38,7 +40,8 @@ export function AttackSimulationLab({ onSendToDetection }) {
     setErrorMsg(null);
     setEvalResult(null);
     try {
-      const res = await fetch("/api/attack-lab/generate-qr", {
+      const url = `${apiBase}/api/attack-lab/generate-qr`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,7 +78,8 @@ export function AttackSimulationLab({ onSendToDetection }) {
     setErrorMsg(null);
     try {
       // Submit actual QR PNG image bytes through the image-analysis path
-      const res = await fetch("/api/check-payment", {
+      const url = `${apiBase}/api/check-payment`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
