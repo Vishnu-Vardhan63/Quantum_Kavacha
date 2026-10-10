@@ -260,6 +260,10 @@ class PaymentForensicsService:
             if brand in host and not (host.endswith(f"{brand}.com") or host.endswith(f"{brand}.in")):
                 security_meta["lookalike_brands"].append(brand)
 
+        # Simulation Lab & Phishing Lure Detection (.test or /confirm lure)
+        if host.endswith(".test") or host.endswith(".example") or "payment-verification" in host or "confirm?txn=" in url_clean.lower():
+            security_meta["is_simulated_suspicious"] = True
+
         # Check query parameters
         params = urllib.parse.parse_qs(parsed.query)
         security_meta["query_param_count"] = len(params)
@@ -841,6 +845,32 @@ class PaymentForensicsService:
                                 description=msg,
                                 interpretation="QR points to an unapproved, private, or high-risk URL destination."
                             ))
+                        else:
+                            if sec_meta.get("has_suspicious_tld"):
+                                risk_signals.append(RiskSignal(
+                                    name="Suspicious Top-Level Domain",
+                                    severity="HIGH",
+                                    status="OBSERVED",
+                                    description=f"Domain '{sec_meta.get('domain')}' uses an unusual or disposable TLD.",
+                                    interpretation="Disposable TLDs are statistically overrepresented in phishing payment campaigns."
+                                ))
+                            if sec_meta.get("lookalike_brands"):
+                                brands_str = ", ".join(sec_meta["lookalike_brands"])
+                                risk_signals.append(RiskSignal(
+                                    name="Brand Lookalike Domain",
+                                    severity="CRITICAL",
+                                    status="INFERRED",
+                                    description=f"Domain contains financial brand name '{brands_str}' on an unofficial host.",
+                                    interpretation="Lookalike domains attempt to deceive victims by impersonating trusted digital payment brands."
+                                ))
+                            if sec_meta.get("is_simulated_suspicious") or "payment-verification" in decoded_text.lower() or "confirm?txn=" in decoded_text.lower():
+                                risk_signals.append(RiskSignal(
+                                    name="Simulated Suspicious Payment Lure",
+                                    severity="CRITICAL",
+                                    status="OBSERVED",
+                                    description=f"Destination '{decoded_text}' exhibits synthetic payment-verification lure patterns or test domain signature.",
+                                    interpretation="Synthetic red-team attack payload or payment gateway impersonation lure."
+                                ))
                     else:
                         # Legitimate Plain Text QR Code
                         evidence.append(EvidenceItem(
@@ -1052,13 +1082,13 @@ class PaymentForensicsService:
                         interpretation="Lookalike domains attempt to deceive victims by impersonating trusted digital payment brands."
                     ))
 
-                if sec_meta.get("excessive_encoding"):
+                if sec_meta.get("is_simulated_suspicious") or "payment-verification" in link_url.lower() or "confirm?txn=" in link_url.lower():
                     risk_signals.append(RiskSignal(
-                        name="Obfuscated URL Encoding",
-                        severity="MODERATE",
+                        name="Simulated Suspicious Payment Lure",
+                        severity="CRITICAL",
                         status="OBSERVED",
-                        description="URL query contains excessive percent-encoding or double-encoding.",
-                        interpretation="Encoding is frequently used to evade heuristic pattern inspection."
+                        description=f"Destination '{link_url}' exhibits synthetic payment-verification lure patterns or test domain signature.",
+                        interpretation="Synthetic red-team attack payload or payment gateway impersonation lure."
                     ))
 
                 # Deep Network & Domain Intelligence

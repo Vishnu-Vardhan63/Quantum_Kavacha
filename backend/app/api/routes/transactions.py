@@ -16,12 +16,20 @@ router = APIRouter(prefix="/api", tags=["Transactions"])
 async def predict_transaction(payload: TransactionPayload):
     try:
         pred = fraud_engine.predict(payload)
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO transactions (txn_id, user_id, amount, merchant_id, device_id, ip, timestamp, risk_score, decision, risk_level, prediction_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (pred.txn_id, payload.user_id, payload.amount, payload.merchant_id, payload.device_id, payload.ip, time.time(), pred.risk_score, pred.decision, pred.risk_level, pred.model_dump_json())
-            )
-            conn.commit()
+        from backend.app.db.database import MongoPersistence
+        MongoPersistence.save_transaction(
+            txn_id=pred.txn_id,
+            user_id=payload.user_id,
+            amount=payload.amount,
+            merchant_id=payload.merchant_id,
+            device_id=payload.device_id,
+            ip=payload.ip,
+            timestamp=time.time(),
+            risk_score=pred.risk_score,
+            decision=pred.decision,
+            risk_level=pred.risk_level,
+            pred_json=pred.model_dump_json()
+        )
         try:
             from backend.app.services.investigation_service import investigation_service
             investigation_service.register_case_from_prediction(pred, payload)

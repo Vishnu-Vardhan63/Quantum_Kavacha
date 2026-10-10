@@ -3,7 +3,7 @@ import uuid
 import re
 from typing import Dict, Any, List, Optional
 import json
-from backend.app.db.database import get_db_connection, init_db
+from backend.app.db.database import get_db_connection, init_db, MongoPersistence
 from datetime import datetime, timezone
 
 import hashlib
@@ -318,13 +318,8 @@ class InvestigationService:
             "Senior SOC Analyst",
             "Corroborated domain registration date (3 days ago). High confidence phishing attempt targeting banking rewards."
         )
-        with get_db_connection() as conn:
-            for case in [case_1]:
-                conn.execute(
-                    "INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)",
-                    (case.case_id, case.status, case.created_at, case.updated_at, case.source, case.model_dump_json())
-                )
-            conn.commit()
+        for case in [case_1]:
+            MongoPersistence.save_case(case.case_id, case.status, case.created_at, case.updated_at, case.source, case.model_dump_json())
 
     def register_case_from_check_payment(self, check_res: CheckPaymentResponse, req: CheckPaymentRequest) -> InvestigationCase:
         """Create or update an authoritative InvestigationCase from CheckPaymentResponse."""
@@ -430,9 +425,13 @@ class InvestigationService:
 
         # Search for related cases in existing store (matches on recipient or device or user)
         related_cases = []
-        with get_db_connection() as conn:
-            rows = conn.execute("SELECT case_data FROM investigation_cases").fetchall()
-            all_cases = [InvestigationCase.model_validate_json(r["case_data"]) for r in rows]
+        raw_case_jsons = MongoPersistence.list_all_cases()
+        all_cases = []
+        for r in raw_case_jsons:
+            try:
+                all_cases.append(InvestigationCase.model_validate_json(r))
+            except Exception:
+                continue
         for exist_case in all_cases:
             if exist_case.case_id == case_id:
                 continue
@@ -531,12 +530,7 @@ class InvestigationService:
             )
         )
 
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)",
-                (case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
-            )
-            conn.commit()
+        MongoPersistence.save_case(case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
         return case_obj
 
     def register_case_from_prediction(self, pred: PredictionResponse, txn: TransactionPayload) -> InvestigationCase:
@@ -648,20 +642,17 @@ class InvestigationService:
             pre_fraud_warning=pred.pre_fraud_warning
         )
 
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)",
-                (case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
-            )
-            conn.commit()
+        MongoPersistence.save_case(case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
         return case_obj
 
     def get_case(self, case_id: str) -> Optional[InvestigationCase]:
         """Retrieve full case details by ID."""
-        with get_db_connection() as conn:
-            row = conn.execute("SELECT case_data FROM investigation_cases WHERE case_id = ?", (case_id,)).fetchone()
-            if row:
-                return InvestigationCase.model_validate_json(row["case_data"])
+        raw_json = MongoPersistence.get_case(case_id)
+        if raw_json:
+            try:
+                return InvestigationCase.model_validate_json(raw_json)
+            except Exception:
+                pass
         return None
 
     def list_cases(self, search_query: Optional[str] = None, limit: int = 50) -> List[InvestigationCaseSummary]:
@@ -669,9 +660,13 @@ class InvestigationService:
         results = []
         q = (search_query or "").strip().lower()
 
-        with get_db_connection() as conn:
-            rows = conn.execute("SELECT case_data FROM investigation_cases ORDER BY created_at DESC").fetchall()
-            all_cases = [InvestigationCase.model_validate_json(row["case_data"]) for row in rows]
+        raw_cases = MongoPersistence.list_all_cases()
+        all_cases = []
+        for rj in raw_cases:
+            try:
+                all_cases.append(InvestigationCase.model_validate_json(rj))
+            except Exception:
+                pass
 
         for c in all_cases:
             cid = c.case_id
@@ -735,9 +730,7 @@ class InvestigationService:
         c.analyst_notes.append(note)
         c.updated_at = time.time()
         self._append_audit_entry(c, f"Analyst Note Added ({note_type})", author or "Lead SOC Analyst", content[:120])
-        with get_db_connection() as conn:
-            conn.execute("INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)", (c.case_id, c.status, c.created_at, c.updated_at, c.source, c.model_dump_json()))
-            conn.commit()
+        MongoPersistence.save_case(c.case_id, c.status, c.created_at, c.updated_at, c.source, c.model_dump_json())
         return note
 
     def update_analyst_decision(self, case_id: str, req: AnalystDecisionRequest) -> Optional[InvestigationCase]:
@@ -761,12 +754,7 @@ class InvestigationService:
 
         c.updated_at = now
         self._append_audit_entry(c, f"Analyst Decision: {req.analyst_action}", req.author or "Lead SOC Analyst", req.rationale)
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)",
-                (c.case_id, c.status, c.created_at, c.updated_at, c.source, c.model_dump_json())
-            )
-            conn.commit()
+        MongoPersistence.save_case(c.case_id, c.status, c.created_at, c.updated_at, c.source, c.model_dump_json())
         return c
 
     def create_case_from_evidence(self, req: CaseCreateRequest) -> InvestigationCase:
@@ -808,12 +796,7 @@ class InvestigationService:
             case_obj = self.get_case(case_obj.case_id) or case_obj
 
         self._append_audit_entry(case_obj, "Case Initialized", "INVESTIGATION_CENTER", f"New case created via direct investigation workspace. Source input: {auto_input}.")
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)",
-                (case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
-            )
-            conn.commit()
+        MongoPersistence.save_case(case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
 
         return case_obj
 
@@ -838,22 +821,19 @@ class InvestigationService:
                 })
 
         self._append_audit_entry(case_obj, "Analysis Retried", "ANALYST", f"Re-executed analysis pass. Analyzer subset: {req.analyzer_subset or 'ALL'}.")
-
-        with get_db_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO investigation_cases (case_id, status, created_at, updated_at, source, case_data) VALUES (?, ?, ?, ?, ?, ?)",
-                (case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
-            )
-            conn.commit()
+        MongoPersistence.save_case(case_obj.case_id, case_obj.status, case_obj.created_at, case_obj.updated_at, case_obj.source, case_obj.model_dump_json())
 
         return case_obj
 
     def reset_demo_cases(self) -> Dict[str, Any]:
         """Reset the investigation store to a clean deterministic SOC evaluation state for repeatable judge demos."""
-        with get_db_connection() as conn:
-            conn.execute("DELETE FROM investigation_cases")
-            conn.commit()
+        MongoPersistence.delete_all_cases()
         self._seed_default_cases()
+        return {
+            "status": "RESET_SUCCESSFUL",
+            "message": "Investigation store reset to clean deterministic SOC evaluation state.",
+            "active_cases": len(self.list_cases())
+        }
         return {
             "status": "RESET_SUCCESSFUL",
             "message": "Investigation store reset to clean deterministic SOC evaluation state.",

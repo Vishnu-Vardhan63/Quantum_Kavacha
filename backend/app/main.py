@@ -70,11 +70,20 @@ async def health_check():
     qml_status = capabilities.get("qiskit_machine_learning", {}).get("status", "UNAVAILABLE")
     quantum_engine_online = (qiskit_status == "AVAILABLE") and (qml_status == "AVAILABLE")
     
+    from backend.app.db.database import check_mongo_health
+    db_status = check_mongo_health()
+
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "database": {
+            "status": db_status.get("status"),
+            "connected": db_status.get("connected"),
+            "driver": db_status.get("driver"),
+            "database": db_status.get("database")
+        },
         "quantum_engine": {
             "online": quantum_engine_online,
             "mode": settings.QUANTUM_MODE_DEFAULT,
@@ -82,6 +91,12 @@ async def health_check():
         },
         "capabilities": capabilities
     }
+
+@app.get("/api/database/status", summary="Secure MongoDB Atlas Status Check")
+async def database_status():
+    """Returns database connection status and telemetry with all credentials redacted."""
+    from backend.app.db.database import check_mongo_health
+    return check_mongo_health()
 
 @app.get("/", summary="Root Endpoint")
 async def root():
