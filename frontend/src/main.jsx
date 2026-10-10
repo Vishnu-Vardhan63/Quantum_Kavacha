@@ -2338,7 +2338,7 @@ function App() {
               {health?.status === "healthy" ? "● BACKEND LIVE" : "○ BACKEND OFFLINE"}
             </span>
             <span className="evidence-tag observed" style={{ fontSize: "0.7rem", padding: "0.3rem 0.6rem" }}>
-              DEMO MODE
+              {health?.quantum_engine?.execution_mode || "PRODUCTION INFERENCE"}
             </span>
           </div>
         </header>
