@@ -13,8 +13,19 @@ class Settings(BaseModel):
     PROJECT_NAME: str = "QUANTUM KAVACHA"
     VERSION: str = "2.0.0"
     API_PREFIX: str = "/api"
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://localhost:8000", "*"]
+    CORS_ORIGINS: list[str] = [
+        "https://quantum-kavacha.netlify.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "*"
+    ]
     
+    # MongoDB Atlas Database Configuration
+    MONGODB_URI: str = Field(default_factory=lambda: os.getenv("MONGODB_URI", ""))
+    MONGODB_DATABASE: str = Field(default_factory=lambda: os.getenv("MONGODB_DATABASE", "quantum_kavacha"))
+
     # Quantum Hardware & Token
     IBM_QUANTUM_TOKEN: str = Field(default_factory=lambda: os.getenv("IBM_QUANTUM_TOKEN", ""))
     QUANTUM_MODE_DEFAULT: str = "SIMULATION" # SIMULATION, NOISY SIMULATION, or HARDWARE
