@@ -93,12 +93,12 @@ async def generate_simulated_qr(req: GenerateSimulatedQRRequest | None = None):
         category = "Phishing Payment Lure"
         description = "Simulated credential harvesting & fake bank confirmation gateway on RFC 2606 .test domain."
 
-    # Generate real high-contrast PNG QR
+    # Generate real high-contrast PNG QR with standard quiet-zone border for 100% OpenCV detection
     qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_Q,
         box_size=10,
-        border=3,
+        border=4,
     )
     qr.add_data(payload)
     qr.make(fit=True)

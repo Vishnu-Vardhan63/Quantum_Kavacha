@@ -2340,6 +2340,13 @@ function App() {
             >
               <MessageSquare size={13} /> Ask Copilot
             </button>
+            <span
+              className={`evidence-tag ${health?.status === "healthy" ? "observed" : "critical"}`}
+              style={{ fontSize: "0.7rem", padding: "0.3rem 0.6rem" }}
+              title={`API Backend: ${FASTAPI_BASE}`}
+            >
+              {health?.status === "healthy" ? "● BACKEND LIVE" : "○ BACKEND OFFLINE"}
+            </span>
             <span className="evidence-tag observed" style={{ fontSize: "0.7rem", padding: "0.3rem 0.6rem" }}>
               DEMO MODE
             </span>
@@ -3447,6 +3454,7 @@ function App() {
                   {/* 1. Controlled Cybersecurity Testbed: QR Artifact Generator & Benchmark */}
                   <div style={{ marginBottom: "1.5rem" }}>
                     <AttackSimulationLab
+                      fastApiBase={FASTAPI_BASE}
                       onSendToDetection={(payloadStr) => {
                         setCheckPayload(payloadStr);
                         setActiveTab("detect");
