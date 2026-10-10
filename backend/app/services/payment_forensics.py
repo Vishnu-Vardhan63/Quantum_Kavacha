@@ -653,6 +653,39 @@ class PaymentForensicsService:
                 ))
             raw_payload = text_norm_res.get("normalized_text", raw_payload)
 
+        # -------------------------------------------------------------
+        # Stage 0: Canonical Evidence Classification Layer
+        # -------------------------------------------------------------
+        evidence_type = "UNKNOWN"
+        transaction_detected = False
+        payment_status = "NOT_APPLICABLE"
+
+        if input_type == "QR":
+            evidence_type = "QR_CODE"
+        elif input_type == "LINK":
+            evidence_type = "URL_LINK"
+        elif input_type == "TRANSACTION":
+            evidence_type = "TRANSACTION_RECORD"
+            transaction_detected = True
+            payment_status = "VERIFIED"
+        elif input_type == "SCREENSHOT":
+            evidence_type = "PAYMENT_RECEIPT"
+        elif input_type == "FILE":
+            fname = (req.filename or "").lower()
+            if fname.endswith(".pdf"):
+                if "invoice" in fname or "bill" in fname:
+                    evidence_type = "INVOICE"
+                elif "receipt" in fname or "payment" in fname or "txn" in fname or "trans" in fname:
+                    evidence_type = "PAYMENT_RECEIPT"
+                elif "statement" in fname:
+                    evidence_type = "BANK_STATEMENT"
+                else:
+                    evidence_type = "GENERAL_DOCUMENT"
+            elif any(fname.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"]):
+                evidence_type = "PAYMENT_RECEIPT"
+            else:
+                evidence_type = "GENERAL_DOCUMENT"
+
         # Default transaction inference parameters
         amount = 850.0
         hour = datetime.now().hour
@@ -1452,9 +1485,30 @@ class PaymentForensicsService:
         payload_integrity = self.evaluate_payload_integrity(cross_val, upi_data, req.transaction_context, evidence)
         txn_dna = transaction_dna_service.evaluate_transaction_dna(user_id, req.transaction_context or {"amount": amount, "user_id": user_id, "velocity_1h": velocity_1h, "device_score": device_score, "merchant_risk": merchant_risk})
 
+        # Canonical Final Verdict mapping
+        if decision == "BLOCK":
+            final_verdict = "MALICIOUS"
+        elif decision in ["STEP_UP", "MONITOR"]:
+            final_verdict = "SUSPICIOUS"
+        elif decision == "APPROVE":
+            final_verdict = "SAFE"
+        else:
+            final_verdict = "INCONCLUSIVE"
+
+        # If evidence is a general document with no payment proof, enforce NOT_APPLICABLE
+        if evidence_type == "GENERAL_DOCUMENT" and not is_upi and not payee_vpa_obs:
+            transaction_detected = False
+            payment_status = "NOT_APPLICABLE"
+            if final_verdict == "SAFE":
+                recommendation = "DOCUMENT VERIFIED — No malicious threats detected in file structure. Payment verification is NOT APPLICABLE."
+
         res_obj = CheckPaymentResponse(
             case_id=case_id,
             input_type=input_type,
+            evidence_type=evidence_type,
+            transaction_detected=transaction_detected,
+            final_verdict=final_verdict,
+            payment_status=payment_status,
             timestamp=time.time(),
             analysis_status="COMPLETED",
             trust_level=trust_level,

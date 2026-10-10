@@ -797,10 +797,17 @@ export function DetectionCenterWorkspace({
                     </div>
                     <div>
                       <div className="hero-status-title">
-                        {checkResult.decision === "APPROVE" ? "Low Risk — Payment Authorized" : (checkResult.decision === "BLOCK" ? "High Risk — Authorization Blocked" : "Caution — Step-Up Verification Required")}
+                        {checkResult.payment_status === "NOT_APPLICABLE" || checkResult.evidence_type === "GENERAL_DOCUMENT"
+                          ? (checkResult.decision === "APPROVE" ? "Document Verified — Safe (Payment N/A)" : "Document Anomaly Detected")
+                          : (checkResult.decision === "APPROVE"
+                              ? "Low Risk — Verified Legitimate"
+                              : (checkResult.decision === "BLOCK"
+                                  ? "High Risk — Authorization Blocked"
+                                  : "Caution — Step-Up Verification Required"))}
                       </div>
                       <div className="hero-status-sub">
-                        {checkResult.risk_level} • Evidence Confidence: {((checkResult.confidence || 0.95) * 100).toFixed(0)}%
+                        {checkResult.evidence_type ? `Type: ${checkResult.evidence_type} • ` : ""}
+                        {checkResult.risk_level || "Analysis Complete"} • Evidence Confidence: {((checkResult.confidence || 0.95) * 100).toFixed(0)}%
                       </div>
                     </div>
                   </div>

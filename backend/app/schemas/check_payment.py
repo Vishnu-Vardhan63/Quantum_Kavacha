@@ -52,6 +52,10 @@ class CheckPaymentRequest(BaseModel):
 class CheckPaymentResponse(BaseModel):
     case_id: str
     input_type: str
+    evidence_type: str = Field(default="PAYMENT_ARTIFACT", description="GENERAL_DOCUMENT | INVOICE | PAYMENT_RECEIPT | BANK_STATEMENT | QR_CODE | URL_LINK | UNKNOWN")
+    transaction_detected: bool = Field(default=True, description="Whether actual payment or transaction evidence was detected")
+    final_verdict: str = Field(default="SAFE", description="SAFE | SUSPICIOUS | MALICIOUS | INCONCLUSIVE | NOT_APPLICABLE")
+    payment_status: str = Field(default="VERIFIED", description="NOT_APPLICABLE | PENDING_REVIEW | SUSPECTED_FRAUD | VERIFIED")
     timestamp: float
     analysis_status: str # COMPLETED | REVIEW_REQUIRED | INVALID_INPUT
     trust_level: str # LOW RISK BASED ON AVAILABLE EVIDENCE | SUSPICIOUS / CAUTION | HIGH RISK / UNTRUSTED
