@@ -2141,23 +2141,23 @@ function App() {
 
   const getPageTitleAndDesc = () => {
     switch (activeTab) {
-      case "overview": return { title: "Command Center", desc: "Evidence-driven agentic fraud operations, critical alerts, and active quantum defenses." };
-      case "investigation": return { title: "Investigations Workspace", desc: "Three-region case command center with multi-signal evidence corroboration and grounded Copilot." };
+      case "overview": return { title: t.titleOverview || "Command Center", desc: t.descOverview || "Evidence-driven agentic fraud operations, critical alerts, and active quantum defenses." };
+      case "investigation": return { title: t.titleInvestigation || "Investigations Workspace", desc: t.descInvestigation || "Three-region case command center with multi-signal evidence corroboration and grounded Copilot." };
       case "detect":
-      case "evidence": return { title: "Evidence Analysis Explorer", desc: "Multi-modal forensic ingestion for QR payloads, receipt OCR, document SHA-256 seals, and URL intelligence." };
-      case "agent-workspace": return { title: "Agent Workspace & Registry", desc: "Real service execution states, hardware grounding, runtime latencies, and input evidence chains." };
-      case "graph": return { title: "Fraud Relationship Graph", desc: "Entity topology tracing payer accounts, anomalous devices, and mule syndicates in 3D space." };
+      case "evidence": return { title: t.titleDetection || "Evidence Analysis Explorer", desc: t.descDetection || "Multi-modal forensic ingestion for QR payloads, receipt OCR, document SHA-256 seals, and URL intelligence." };
+      case "agent-workspace": return { title: t.titleAgentWorkspace || "Agent Workspace & Registry", desc: t.descAgentWorkspace || "Real service execution states, hardware grounding, runtime latencies, and input evidence chains." };
+      case "graph": return { title: t.titleGraph || "Fraud Relationship Graph", desc: t.descGraph || "Entity topology tracing payer accounts, anomalous devices, and mule syndicates in 3D space." };
       case "quantum-lab":
-      case "models": return { title: "Quantum Research Lab", desc: "Qiskit Aer 4-qubit ZZFeatureMap Hilbert space telemetry, kernel Gram matrix, and empirical ablation baselines." };
+      case "models": return { title: t.titleQuantumLab || "Quantum Research Lab", desc: t.descQuantumLab || "Qiskit Aer 4-qubit ZZFeatureMap Hilbert space telemetry, kernel Gram matrix, and empirical ablation baselines." };
       case "threat-intel":
-      case "response": return { title: "Threat Intelligence & Fraud Alerts", desc: "Autonomous defense orchestrator, VirusTotal vendor intelligence, and incident mitigation." };
-      case "attack-lab": return { title: "Attack Simulation Lab", desc: "Strictly isolated red-team adversarial simulator evaluating multi-stage fraud resilience." };
-      case "device-trust": return { title: "System Health & Device Trust", desc: "ESP32-S3 hardware-rooted identity, cryptographic attestation, and operational audit." };
-      case "check": return { title: "Transaction Feed & Ledger", desc: "Real-time payment stream, velocity bursts, and transactional telemetry." };
-      case "explain": return { title: "FraudDNA™ Explainability", desc: "5-axis risk fingerprint, counterfactual simulations, and attribution analysis." };
-      case "chain": return { title: "Attack Chain Reconstruction", desc: "Chronological vertical forensic story mapping multi-stage attack vectors." };
-      case "copilot": return { title: "Investigation Copilot", desc: "Evidence-grounded conversational analyst explaining SHAP, graph links, and case evidence." };
-      default: return { title: "QUANTUM KAVACHA", desc: "Hybrid Quantum–Classical Digital Fraud Detection & Forensics" };
+      case "response": return { title: t.titleThreatIntel || "Threat Intelligence & Fraud Alerts", desc: t.descThreatIntel || "Autonomous defense orchestrator, VirusTotal vendor intelligence, and incident mitigation." };
+      case "attack-lab": return { title: t.titleAttackLab || "Attack Simulation Lab", desc: t.descAttackLab || "Strictly isolated red-team adversarial simulator evaluating multi-stage fraud resilience." };
+      case "device-trust": return { title: t.titleDeviceTrust || "System Health & Device Trust", desc: t.descDeviceTrust || "ESP32-S3 hardware-rooted identity, cryptographic attestation, and operational audit." };
+      case "check": return { title: t.navCheckPayment || "Transaction Feed & Ledger", desc: "Real-time payment stream, velocity bursts, and transactional telemetry." };
+      case "explain": return { title: t.navExplain || "FraudDNA™ Explainability", desc: "5-axis risk fingerprint, counterfactual simulations, and attribution analysis." };
+      case "chain": return { title: t.navChain || "Attack Chain Reconstruction", desc: "Chronological vertical forensic story mapping multi-stage attack vectors." };
+      case "copilot": return { title: t.navCopilot || "Investigation Copilot", desc: "Evidence-grounded conversational analyst explaining SHAP, graph links, and case evidence." };
+      default: return { title: t.appName || "QUANTUM KAVACHA", desc: t.appSubtitle || "Hybrid Quantum–Classical Digital Fraud Detection & Forensics" };
     }
   };
 
@@ -2185,82 +2185,82 @@ function App() {
           <div className="sidebar-nav-container">
             {/* Primary Command */}
             <div>
-              <div className="sidebar-section-label">Operations</div>
+              <div className="sidebar-section-label">{t.navOperations || "Operations"}</div>
               <div className="sidebar-nav-list">
                 <button
                   className={`sidebar-nav-item ${activeTab === "overview" ? "active" : ""}`}
                   onClick={() => setActiveTab("overview")}
                 >
-                  <Activity size={16} /> 1. Command Center
+                  <Activity size={16} /> {t.navOverview || "1. Command Center"}
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "investigation" ? "active" : ""}`}
                   onClick={() => setActiveTab("investigation")}
                 >
-                  <Shield size={16} /> 2. Investigations
+                  <Shield size={16} /> {t.navInvestigation || "2. Investigations"}
                   <span className="sidebar-nav-badge">{casesList?.length || 0}</span>
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "detect" || activeTab === "evidence" ? "active" : ""}`}
                   onClick={() => setActiveTab("detect")}
                 >
-                  <Crosshair size={16} /> 3. Evidence Analysis
+                  <Crosshair size={16} /> {t.navDetection || "3. Evidence Analysis"}
                 </button>
               </div>
             </div>
 
             {/* Agent & Topology */}
             <div>
-              <div className="sidebar-section-label">Agent & Topology</div>
+              <div className="sidebar-section-label">{t.navTopology || "Agent & Topology"}</div>
               <div className="sidebar-nav-list">
                 <button
                   className={`sidebar-nav-item ${activeTab === "agent-workspace" ? "active" : ""}`}
                   onClick={() => setActiveTab("agent-workspace")}
                 >
-                  <Cpu size={16} /> 4. Agent Workspace
+                  <Cpu size={16} /> {t.navAgentWorkspace || "4. Agent Workspace"}
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "graph" ? "active" : ""}`}
                   onClick={() => { setActiveTab("graph"); loadCaseGraph(activeCaseId); }}
                 >
-                  <Network size={16} /> 5. Fraud Relationship Graph
+                  <Network size={16} /> {t.navGraph || "5. Fraud Relationship Graph"}
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "quantum-lab" || activeTab === "models" ? "active" : ""}`}
                   onClick={() => setActiveTab("quantum-lab")}
                 >
-                  <Zap size={16} /> 6. Quantum Research Lab
+                  <Zap size={16} /> {t.navQuantumLab || "6. Quantum Research Lab"}
                 </button>
               </div>
             </div>
 
             {/* Intelligence & Simulation */}
             <div>
-              <div className="sidebar-section-label">Defense & Security</div>
+              <div className="sidebar-section-label">{t.navDefense || "Defense & Security"}</div>
               <div className="sidebar-nav-list">
                 <button
                   className={`sidebar-nav-item ${activeTab === "response" || activeTab === "threat-intel" ? "active" : ""}`}
                   onClick={() => setActiveTab("response")}
                 >
-                  <ShieldAlert size={16} /> 7. Threat Intelligence
+                  <ShieldAlert size={16} /> {t.navThreatIntel || "7. Threat Intelligence"}
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "attack-lab" ? "active" : ""}`}
                   onClick={() => setActiveTab("attack-lab")}
                 >
-                  <Flame size={16} /> 8. Attack Simulation Lab
+                  <Flame size={16} /> {t.navAttackLab || "8. Attack Simulation Lab"}
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "device-trust" ? "active" : ""}`}
                   onClick={() => setActiveTab("device-trust")}
                 >
-                  <Server size={16} /> 9. System Health & Audit
+                  <Server size={16} /> {t.navDeviceTrust || "9. System Health & Audit"}
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "copilot" ? "active" : ""}`}
                   onClick={() => setActiveTab("copilot")}
                 >
-                  <MessageSquare size={16} /> Investigation Copilot
+                  <MessageSquare size={16} /> {t.navCopilot || "Investigation Copilot"}
                 </button>
               </div>
             </div>
@@ -2412,6 +2412,7 @@ function App() {
                     recentTxns={recentTxns}
                     activeCase={activeCase}
                     casesList={casesList}
+                    t={t}
                     onNavigate={(tab) => setActiveTab(tab)}
                     onSelectCase={(cid) => {
                       setActiveCaseId(cid);
@@ -2437,6 +2438,7 @@ function App() {
                   casesList={casesList}
                   activeCase={activeCase}
                   activeCaseId={activeCaseId}
+                  t={t}
                   onSelectCase={(cid) => {
                     setActiveCaseId(cid);
                     loadCaseDetails(cid);
@@ -2605,6 +2607,7 @@ function App() {
                 <AgentWorkspace
                   health={health}
                   quantumStatus={quantumStatus}
+                  t={t}
                   onNavigate={(tab) => setActiveTab(tab)}
                 />
               </motion.div>
@@ -2624,6 +2627,7 @@ function App() {
                   quantumStatus={quantumStatus}
                   quantumBenchmarkData={quantumBenchmarkData}
                   benchmarkLoading={benchmarkLoading}
+                  t={t}
                   onRunBenchmark={loadQuantumBenchmark}
                 />
               </motion.div>

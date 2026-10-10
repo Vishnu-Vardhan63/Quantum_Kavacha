@@ -9,6 +9,7 @@ export function InvestigationCommandCenter({
   casesList,
   activeCase,
   activeCaseId,
+  t = {},
   onSelectCase,
   onSearchCases,
   searchQuery,
@@ -75,7 +76,7 @@ export function InvestigationCommandCenter({
         <div className="glass-panel" style={{ display: "flex", flexDirection: "column", gap: "0.85rem", padding: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <Shield size={16} style={{ color: "var(--brand-primary)" }} /> Cases Queue ({filteredCases.length})
+              <Shield size={16} style={{ color: "var(--brand-primary)" }} /> {t.casesQueue || "Cases Queue"} ({filteredCases.length})
             </h3>
             <div style={{ display: "flex", gap: "0.3rem" }}>
               <button
@@ -84,7 +85,7 @@ export function InvestigationCommandCenter({
                 onClick={onOpenIntakeModal}
                 title="Direct Investigation Intake"
               >
-                + New
+                {t.newIntake || "+ New"}
               </button>
               <button
                 className="btn btn-secondary"
@@ -92,7 +93,7 @@ export function InvestigationCommandCenter({
                 onClick={onResetDemos}
                 title="Reset SOC cases"
               >
-                🔄
+                {t.resetDemos || "🔄"}
               </button>
             </div>
           </div>
@@ -482,10 +483,10 @@ export function InvestigationCommandCenter({
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "1rem" }}>
               <button className="btn btn-secondary" onClick={() => setConfirmationModal(null)} style={{ fontSize: "0.75rem" }}>
-                Cancel
+                {t.cancel || "Cancel"}
               </button>
               <button className="btn btn-primary" onClick={handleConfirmAction} style={{ fontSize: "0.75rem" }}>
-                Authorize & Commit Decision
+                {t.confirmAction || "Authorize & Commit Decision"}
               </button>
             </div>
           </div>

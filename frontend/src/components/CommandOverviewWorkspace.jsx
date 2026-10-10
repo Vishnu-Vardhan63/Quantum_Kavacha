@@ -12,6 +12,7 @@ export function CommandOverviewWorkspace({
   recentTxns,
   activeCase,
   casesList,
+  t = {},
   onNavigate,
   onSelectCase,
   onRunDetection
@@ -38,11 +39,11 @@ export function CommandOverviewWorkspace({
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Zap size={20} style={{ color: "var(--brand-primary)" }} />
               <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.01em" }}>
-                Quantum Kavacha Agentic Command Center
+                {t.appName || "Quantum Kavacha"} {t.titleOverview ? `— ${t.titleOverview}` : "Agentic Command Center"}
               </h2>
             </div>
             <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "4px", maxWidth: "680px", lineHeight: 1.45 }}>
-              Continuous multimodal defense coordinating IBM Qiskit Statevector kernel inference, RapidOCR document verification, Rapid Threat Intelligence feeds, and autonomous SOC case triage.
+              {t.descOverview || "Continuous multimodal defense coordinating IBM Qiskit Statevector kernel inference, RapidOCR document verification, Rapid Threat Intelligence feeds, and autonomous SOC case triage."}
             </p>
           </div>
 
@@ -52,14 +53,14 @@ export function CommandOverviewWorkspace({
               onClick={() => onNavigate("investigation")}
               style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 0.85rem", fontSize: "0.78rem" }}
             >
-              <Shield size={14} /> Open Investigation Command ({casesList?.length || 0})
+              <Shield size={14} /> {t.openInvestigation || "Open Investigation Command"} ({casesList?.length || 0})
             </button>
             <button
               className="btn btn-secondary"
               onClick={() => onNavigate("evidence")}
               style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 0.85rem", fontSize: "0.78rem" }}
             >
-              <Eye size={14} /> Ingest Evidence Vector
+              <Eye size={14} /> {t.ingestVector || "Ingest Evidence Vector"}
             </button>
           </div>
         </div>
@@ -67,7 +68,7 @@ export function CommandOverviewWorkspace({
         {/* Tactical Key Findings Strip */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem", marginTop: "1.1rem" }}>
           <div style={{ background: "rgba(8, 12, 22, 0.6)", padding: "0.65rem 0.85rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>Active Investigations</span>
+            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>{t.activeInvestigations || "Active Investigations"}</span>
             <div style={{ fontSize: "1.25rem", fontWeight: 800, fontFamily: "JetBrains Mono", color: "var(--text-primary)", marginTop: "2px" }}>
               {casesList?.length || 0}
             </div>
@@ -75,7 +76,7 @@ export function CommandOverviewWorkspace({
           </div>
 
           <div style={{ background: "rgba(8, 12, 22, 0.6)", padding: "0.65rem 0.85rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>Critical Threat Incidents</span>
+            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>{t.criticalThreats || "Critical Threat Incidents"}</span>
             <div style={{ fontSize: "1.25rem", fontWeight: 800, fontFamily: "JetBrains Mono", color: criticalCount > 0 ? "var(--color-high-risk)" : "var(--color-safe)", marginTop: "2px" }}>
               {criticalCount}
             </div>
@@ -85,7 +86,7 @@ export function CommandOverviewWorkspace({
           </div>
 
           <div style={{ background: "rgba(8, 12, 22, 0.6)", padding: "0.65rem 0.85rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>Quantum Kernel Gate</span>
+            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>{t.quantumKernelGate || "Quantum Kernel Gate"}</span>
             <div style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "JetBrains Mono", color: "var(--brand-primary)", marginTop: "2px" }}>
               {quantumStatus?.execution_mode || "SIMULATION"}
             </div>
@@ -93,7 +94,7 @@ export function CommandOverviewWorkspace({
           </div>
 
           <div style={{ background: "rgba(8, 12, 22, 0.6)", padding: "0.65rem 0.85rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>System Integrity</span>
+            <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>{t.systemIntegrity || "System Integrity"}</span>
             <div style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "JetBrains Mono", color: health?.status === "healthy" ? "var(--color-safe)" : "var(--color-caution)", marginTop: "2px" }}>
               {health?.status === "healthy" ? "OPERATIONAL" : "DEGRADED"}
             </div>
