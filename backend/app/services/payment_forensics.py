@@ -632,6 +632,27 @@ class PaymentForensicsService:
                 if "transaction_context" in preset and not req.transaction_context:
                     req.transaction_context = preset["transaction_context"]
 
+        # Text sanitization and Unicode normalization
+        if raw_payload:
+            text_norm_res = threat_intel_service.sanitize_and_normalize_text(raw_payload)
+            if text_norm_res.get("has_zero_width") or text_norm_res.get("contains_bidi_override"):
+                risk_signals.append(RiskSignal(
+                    name="Zero-Width or BiDi Unicode Obfuscation Detected",
+                    severity="HIGH",
+                    status="OBSERVED",
+                    description=f"Payload contains {text_norm_res.get('zero_width_count', 0)} invisible zero-width or directional override characters.",
+                    interpretation="Zero-width characters and BiDi overrides are commonly used to disguise malicious URLs and bypass string filters."
+                ))
+            if text_norm_res.get("has_homoglyphs"):
+                risk_signals.append(RiskSignal(
+                    name="Mixed-Script Unicode Homoglyph Detected",
+                    severity="HIGH",
+                    status="OBSERVED",
+                    description=f"Payload contains characters from mixed scripts ({', '.join(text_norm_res.get('detected_scripts', []))}).",
+                    interpretation="Mixed-script homoglyphs mimic legitimate characters to deceive victims and security scanners."
+                ))
+            raw_payload = text_norm_res.get("normalized_text", raw_payload)
+
         # Default transaction inference parameters
         amount = 850.0
         hour = datetime.now().hour

@@ -28,9 +28,12 @@ def get_mongo_client():
     global _mongo_client, _mongo_db, _mongo_init_attempted
     if _mongo_client is not None:
         return _mongo_client
+    if _mongo_init_attempted:
+        return None
 
     mongo_uri = getattr(settings, "MONGODB_URI", "")
     if not mongo_uri:
+        _mongo_init_attempted = True
         return None
 
     try:
@@ -38,9 +41,9 @@ def get_mongo_client():
         # Connect with safe timeout
         _mongo_client = pymongo.MongoClient(
             mongo_uri,
-            serverSelectionTimeoutMS=4000,
-            connectTimeoutMS=4000,
-            socketTimeoutMS=5000,
+            serverSelectionTimeoutMS=2000,
+            connectTimeoutMS=2000,
+            socketTimeoutMS=2000,
             appname="QuantumKavacha"
         )
         # Test connection ping
@@ -53,6 +56,7 @@ def get_mongo_client():
         logger.warning(f"MongoDB Atlas connection unready or unreachable: {type(e).__name__}. Falling back to SQLite.")
         _mongo_client = None
         _mongo_db = None
+        _mongo_init_attempted = True
         return None
 
 
