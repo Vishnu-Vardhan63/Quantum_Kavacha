@@ -58,3 +58,42 @@ def test_attack_lab_generate_and_evaluate_benign_qr():
     # Decision should be safe
     assert check_data["decision"] in ["APPROVE", "MONITOR"]
     assert check_data["risk_score"] <= 35
+
+def test_attack_lab_execution_and_isolation():
+    """
+    Verify Attack Lab scenario runs through real multi-modal pipelines while remaining
+    isolated as an educational simulation without polluting real investigation cases.
+    """
+    # 1. Fetch available scenarios
+    scenarios_res = client.get("/api/attack-lab/scenarios")
+    assert scenarios_res.status_code == 200
+    scenarios = scenarios_res.json()
+    assert len(scenarios) >= 5
+
+    # 2. Execute scenario 2 (Stolen Credentials / Untrusted Hardware)
+    run_res = client.post("/api/attack-lab/run/SCENARIO_2_STOLEN_CREDENTIALS_UNTRUSTED_HARDWARE")
+    assert run_res.status_code == 200
+    run_data = run_res.json()
+
+    assert "scenario_info" in run_data
+    assert "risk_score" in run_data
+    assert "decision" in run_data
+    assert run_data["decision"] in ["BLOCK", "STEP_UP", "MONITOR"]
+    assert "device_trust" in run_data
+    assert "adaptive_mfa" in run_data
+    assert "quantum_analysis" in run_data
+
+    # 3. Confirm attack simulation execution remains isolated from real investigation cases
+    # The scenario execution returns full pipeline fields
+    assert run_data["provenance"] == "REAL_PIPELINE_EVALUATED"
+    assert run_data["execution_mode"] == "REAL_PIPELINE_COMPUTED"
+
+    # Inquiries to real investigation case list should contain only genuine production cases
+    inv_res = client.get("/api/investigation/cases")
+    assert inv_res.status_code == 200
+    inv_cases = inv_res.json()
+    case_ids = [c["case_id"] for c in inv_cases]
+    assert not any(c.startswith("CASE-SCENARIO_") for c in case_ids)
+
+
+

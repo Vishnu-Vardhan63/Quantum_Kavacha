@@ -23,6 +23,10 @@ import { TransactionsWorkspace } from './components/TransactionsWorkspace';
 import { DetectionCenterWorkspace } from './components/DetectionCenterWorkspace';
 import { FraudAlertsWorkspace } from './components/FraudAlertsWorkspace';
 import { AttackSimulationLab } from './components/AttackSimulationLab';
+import { CommandOverviewWorkspace } from './components/CommandOverviewWorkspace';
+import { InvestigationCommandCenter } from './components/InvestigationCommandCenter';
+import { AgentWorkspace } from './components/AgentWorkspace';
+import { QuantumResearchLabWorkspace } from './components/QuantumResearchLabWorkspace';
 import { translations } from './i18n/translations';
 
 const FASTAPI_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_FASTAPI_BASE || "http://127.0.0.1:8000";
@@ -2137,18 +2141,22 @@ function App() {
 
   const getPageTitleAndDesc = () => {
     switch (activeTab) {
-      case "device-trust": return { title: "ESP32-S3 Hardware Trust Center", desc: "Hardware-rooted identity, cryptographic attestation, 9-axis sensor fingerprinting, and side-channel timing." };
-      case "detect": return { title: "Unified Multi-Modal Detection Center", desc: "Live forensics for UPI QR payloads, payment screenshots, phishing URLs, and transactional feature vectors." };
-      case "check": return { title: "Transaction Feed & Ledger", desc: "Real-time payment stream and transactional telemetry." };
-      case "overview": return { title: "Executive Command Center", desc: "Enterprise operations dashboard, active threat telemetry, and quantum defense status." };
-      case "investigation": return { title: "Investigation Center", desc: "Case-centric forensic workspace with multi-signal evidence corroboration." };
+      case "overview": return { title: "Command Center", desc: "Evidence-driven agentic fraud operations, critical alerts, and active quantum defenses." };
+      case "investigation": return { title: "Investigations Workspace", desc: "Three-region case command center with multi-signal evidence corroboration and grounded Copilot." };
+      case "detect":
+      case "evidence": return { title: "Evidence Analysis Explorer", desc: "Multi-modal forensic ingestion for QR payloads, receipt OCR, document SHA-256 seals, and URL intelligence." };
+      case "agent-workspace": return { title: "Agent Workspace & Registry", desc: "Real service execution states, hardware grounding, runtime latencies, and input evidence chains." };
+      case "graph": return { title: "Fraud Relationship Graph", desc: "Entity topology tracing payer accounts, anomalous devices, and mule syndicates in 3D space." };
+      case "quantum-lab":
+      case "models": return { title: "Quantum Research Lab", desc: "Qiskit Aer 4-qubit ZZFeatureMap Hilbert space telemetry, kernel Gram matrix, and empirical ablation baselines." };
+      case "threat-intel":
+      case "response": return { title: "Threat Intelligence & Fraud Alerts", desc: "Autonomous defense orchestrator, VirusTotal vendor intelligence, and incident mitigation." };
+      case "attack-lab": return { title: "Attack Simulation Lab", desc: "Strictly isolated red-team adversarial simulator evaluating multi-stage fraud resilience." };
+      case "device-trust": return { title: "System Health & Device Trust", desc: "ESP32-S3 hardware-rooted identity, cryptographic attestation, and operational audit." };
+      case "check": return { title: "Transaction Feed & Ledger", desc: "Real-time payment stream, velocity bursts, and transactional telemetry." };
       case "explain": return { title: "FraudDNA™ Explainability", desc: "5-axis risk fingerprint, counterfactual simulations, and attribution analysis." };
-      case "response": return { title: "Response Center", desc: "Active defense orchestrator for mitigation workflows and incident packaging." };
-      case "graph": return { title: "3D Fraud Relationship Graph", desc: "Entity topology tracing payer accounts, anomalous devices, and mule syndicates." };
       case "chain": return { title: "Attack Chain Reconstruction", desc: "Chronological vertical forensic story mapping multi-stage attack vectors." };
-      case "models": return { title: "Model Consensus & Quantum State", desc: "Heterogeneous ML ensemble agreement matrix and quantum kernel escalation." };
-      case "attack-lab": return { title: "Red-Team Attack Lab", desc: "Adversarial attack simulator testing multi-stage fraud resilience." };
-      case "copilot": return { title: "AI Fraud Analyst Copilot", desc: "Evidence-grounded conversational analyst explaining SHAP and graph links." };
+      case "copilot": return { title: "Investigation Copilot", desc: "Evidence-grounded conversational analyst explaining SHAP, graph links, and case evidence." };
       default: return { title: "QUANTUM KAVACHA", desc: "Hybrid Quantum–Classical Digital Fraud Detection & Forensics" };
     }
   };
@@ -2173,104 +2181,86 @@ function App() {
             </div>
           </div>
 
-          {/* Navigation Sections */}
+          {/* Navigation Sections — Agentic Command Center */}
           <div className="sidebar-nav-container">
-            {/* Overview */}
+            {/* Primary Command */}
             <div>
-              <div className="sidebar-section-label">Overview</div>
+              <div className="sidebar-section-label">Operations</div>
               <div className="sidebar-nav-list">
                 <button
                   className={`sidebar-nav-item ${activeTab === "overview" ? "active" : ""}`}
                   onClick={() => setActiveTab("overview")}
                 >
-                  <Activity size={16} /> {t.navOverview || "Operations Dashboard"}
-                </button>
-              </div>
-            </div>
-
-            {/* Detection */}
-            <div>
-              <div className="sidebar-section-label">Detection & Forensics</div>
-              <div className="sidebar-nav-list">
-                <button
-                  className={`sidebar-nav-item ${activeTab === "detect" ? "active" : ""}`}
-                  onClick={() => setActiveTab("detect")}
-                >
-                  <Crosshair size={16} /> {t.navDetection || "Detection Center"}
-                </button>
-                <button
-                  className={`sidebar-nav-item ${activeTab === "check" ? "active" : ""}`}
-                  onClick={() => setActiveTab("check")}
-                >
-                  <FileSearch size={16} /> {t.navCheckPayment || "Transaction Feed"}
-                </button>
-                <button
-                  className={`sidebar-nav-item ${activeTab === "response" ? "active" : ""}`}
-                  onClick={() => setActiveTab("response")}
-                >
-                  <ShieldAlert size={16} /> Fraud Alerts
+                  <Activity size={16} /> 1. Command Center
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "investigation" ? "active" : ""}`}
                   onClick={() => setActiveTab("investigation")}
                 >
-                  <Shield size={16} /> {t.navInvestigation || "Investigations"}
+                  <Shield size={16} /> 2. Investigations
+                  <span className="sidebar-nav-badge">{casesList?.length || 0}</span>
+                </button>
+                <button
+                  className={`sidebar-nav-item ${activeTab === "detect" || activeTab === "evidence" ? "active" : ""}`}
+                  onClick={() => setActiveTab("detect")}
+                >
+                  <Crosshair size={16} /> 3. Evidence Analysis
                 </button>
               </div>
             </div>
 
-            {/* Intelligence */}
+            {/* Agent & Topology */}
             <div>
-              <div className="sidebar-section-label">Intelligence</div>
+              <div className="sidebar-section-label">Agent & Topology</div>
               <div className="sidebar-nav-list">
                 <button
-                  className={`sidebar-nav-item ${activeTab === "explain" ? "active" : ""}`}
-                  onClick={() => setActiveTab("explain")}
+                  className={`sidebar-nav-item ${activeTab === "agent-workspace" ? "active" : ""}`}
+                  onClick={() => setActiveTab("agent-workspace")}
                 >
-                  <Layers size={16} /> {t.navExplain || "FraudDNA & Explain"}
+                  <Cpu size={16} /> 4. Agent Workspace
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "graph" ? "active" : ""}`}
                   onClick={() => { setActiveTab("graph"); loadCaseGraph(activeCaseId); }}
                 >
-                  <Network size={16} /> {t.navGraph || "Entity Graph"}
+                  <Network size={16} /> 5. Fraud Relationship Graph
                 </button>
                 <button
-                  className={`sidebar-nav-item ${activeTab === "chain" ? "active" : ""}`}
-                  onClick={() => setActiveTab("chain")}
+                  className={`sidebar-nav-item ${activeTab === "quantum-lab" || activeTab === "models" ? "active" : ""}`}
+                  onClick={() => setActiveTab("quantum-lab")}
                 >
-                  <GitFork size={16} /> {t.navChain || "Attack Chain"}
+                  <Zap size={16} /> 6. Quantum Research Lab
+                </button>
+              </div>
+            </div>
+
+            {/* Intelligence & Simulation */}
+            <div>
+              <div className="sidebar-section-label">Defense & Security</div>
+              <div className="sidebar-nav-list">
+                <button
+                  className={`sidebar-nav-item ${activeTab === "response" || activeTab === "threat-intel" ? "active" : ""}`}
+                  onClick={() => setActiveTab("response")}
+                >
+                  <ShieldAlert size={16} /> 7. Threat Intelligence
                 </button>
                 <button
-                  className={`sidebar-nav-item ${activeTab === "models" ? "active" : ""}`}
-                  onClick={() => setActiveTab("models")}
+                  className={`sidebar-nav-item ${activeTab === "attack-lab" ? "active" : ""}`}
+                  onClick={() => setActiveTab("attack-lab")}
                 >
-                  <Cpu size={16} /> {t.navModels || "Model Intelligence"}
+                  <Flame size={16} /> 8. Attack Simulation Lab
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "device-trust" ? "active" : ""}`}
                   onClick={() => setActiveTab("device-trust")}
                 >
-                  <Cpu size={16} /> {t.navDeviceTrust || "Device Trust"}
-                </button>
-              </div>
-            </div>
-
-            {/* Simulation & Assistance */}
-            <div>
-              <div className="sidebar-section-label">Simulation & Assistance</div>
-              <div className="sidebar-nav-list">
-                <button
-                  className={`sidebar-nav-item ${activeTab === "attack-lab" ? "active" : ""}`}
-                  onClick={() => setActiveTab("attack-lab")}
-                >
-                  <Flame size={16} /> {t.navAttackLab || "Attack Lab"}
+                  <Server size={16} /> 9. System Health & Audit
                 </button>
                 <button
                   className={`sidebar-nav-item ${activeTab === "copilot" ? "active" : ""}`}
                   onClick={() => setActiveTab("copilot")}
                 >
-                  <MessageSquare size={16} /> {t.navCopilot || "Q-Fraud Copilot"}
+                  <MessageSquare size={16} /> Investigation Copilot
                 </button>
               </div>
             </div>
@@ -2406,266 +2396,32 @@ function App() {
               )}
 
               {activeTab === "overview" && (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.15 }}
-                className="tab-pane"
-              >
-                {/* Executive Command Center */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1.25rem" }}>
-                  <div className="glass-panel" style={{ background: "var(--bg-surface-elevated)", borderBottom: "2px solid var(--brand-primary)" }}>
-                    <div className="panel-header">
-                      <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <Activity size={20} style={{ color: "var(--brand-primary)" }} />
-                          <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{t.navOverview || "Executive Fraud Defense Command Center"}</h2>
-                        </div>
-                        <p className="panel-desc" style={{ marginTop: "4px" }}>
-                          Holistic real-time risk telemetry, forensic evidence aggregation, and quantum escalation orchestration.
-                        </p>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        {health ? (
-                          <span className="evidence-tag observed" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                            <span className="status-dot"></span> FASTAPI LIVE
-                          </span>
-                        ) : (
-                          <span className="evidence-tag critical">BACKEND OFFLINE</span>
-                        )}
-                        <span className="evidence-tag observed" style={{ background: "rgba(59, 130, 246, 0.12)", color: "var(--brand-primary)" }}>
-                          QISKIT 2.x READY
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Centralized Fraud Alert & Safety Engine (Phase 6) */}
-                    <div
-                      style={{
-                        marginTop: "1rem",
-                        padding: "0.85rem 1.15rem",
-                        borderRadius: "var(--radius-md)",
-                        background: "linear-gradient(90deg, rgba(239, 68, 68, 0.1) 0%, rgba(245, 158, 11, 0.06) 50%, rgba(16, 185, 129, 0.05) 100%)",
-                        border: "1px solid rgba(239, 68, 68, 0.25)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: "0.75rem"
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                        <ShieldAlert size={20} style={{ color: "var(--color-high-risk)" }} />
-                        <div>
-                          <strong style={{ fontSize: "0.88rem", color: "var(--text-primary)", display: "block" }}>
-                            {t.riskHigh}
-                          </strong>
-                          <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
-                            {t.riskHighDesc}
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                        <span className="decision-pill block" style={{ fontSize: "0.7rem", padding: "0.25rem 0.6rem" }}>
-                          {t.actionBlock}
-                        </span>
-                        <span className="decision-pill step_up" style={{ fontSize: "0.7rem", padding: "0.25rem 0.6rem" }}>
-                          {t.actionStepUp}
-                        </span>
-                        <span className="decision-pill approve" style={{ fontSize: "0.7rem", padding: "0.25rem 0.6rem" }}>
-                          {t.actionApprove}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Primary Operations KPI Grid */}
-                    <div className="kpi-mini-grid" style={{ marginTop: "1rem", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
-                      <div className="kpi-mini" style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                        <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase" }}>{t.totalProcessed || "Processed Transactions"}</span>
-                        <strong style={{ fontSize: "1.5rem", color: "var(--text-primary)", display: "block", marginTop: "0.5rem" }}>
-                          {analytics?.total_transactions !== undefined ? analytics.total_transactions.toLocaleString() : "UNAVAILABLE"}
-                        </strong>
-                        <span style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "2px", display: "block" }}>
-                          Total Scored Ledger
-                        </span>
-                      </div>
-                      <div className="kpi-mini" style={{ padding: "1rem", background: "var(--color-critical-subtle)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-critical-border)" }}>
-                        <span style={{ fontSize: "0.7rem", color: "var(--color-critical)", textTransform: "uppercase" }}>{t.highRiskBlocked || "Confirmed Fraud (Blocked)"}</span>
-                        <strong style={{ fontSize: "1.5rem", color: "var(--color-critical)", display: "block", marginTop: "0.5rem" }}>
-                          {analytics?.evidence_metrics?.findings_by_decision?.BLOCK ?? analytics?.fraud_detected ?? 33}
-                        </strong>
-                        <span style={{ fontSize: "0.68rem", color: "var(--color-critical)", marginTop: "2px", display: "block" }}>
-                          Rate: {analytics?.fraud_rate_percent ?? 7.92}%
-                        </span>
-                      </div>
-                      <div className="kpi-mini" style={{ padding: "1rem", background: "var(--color-caution-subtle)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-caution-border)" }}>
-                        <span style={{ fontSize: "0.7rem", color: "var(--color-caution)", textTransform: "uppercase" }}>{t.forensicDossiers || "Open SOC Investigations"}</span>
-                        <strong style={{ fontSize: "1.5rem", color: "var(--color-caution)", display: "block", marginTop: "0.5rem" }}>
-                          {analytics?.evidence_metrics?.open_investigations ?? casesList.length}
-                        </strong>
-                        <span style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "2px", display: "block" }}>
-                          Total Dossiers: {analytics?.evidence_metrics?.total_investigations ?? 50}
-                        </span>
-                      </div>
-                      <div className="kpi-mini" style={{ padding: "1rem", background: "rgba(59, 130, 246, 0.06)", borderRadius: "var(--radius-md)", border: "1px solid rgba(59, 130, 246, 0.3)" }}>
-                        <span style={{ fontSize: "0.7rem", color: "var(--brand-primary)", textTransform: "uppercase" }}>Quantum Escalations</span>
-                        <strong style={{ fontSize: "1.5rem", color: "var(--brand-cyan)", display: "block", marginTop: "0.5rem" }}>
-                          {analytics?.evidence_metrics?.quantum_escalations ?? 32}
-                        </strong>
-                        <span style={{ fontSize: "0.68rem", color: "var(--text-dim)", marginTop: "2px", display: "block" }}>
-                          4-Qubit ZZFeatureMap (CPU)
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Secondary Detection Matrix & Quick Actions */}
-                    <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid var(--border-subtle)", display: "grid", gridTemplateColumns: "1.2fr 1.8fr", gap: "1rem" }}>
-                      {/* Detector Category Breakdown */}
-                      <div style={{ background: "rgba(9, 13, 22, 0.4)", padding: "0.85rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                        <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.6rem" }}>
-                          Multi-Modal Ingestion Breakdown
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.6rem" }}>
-                          <div style={{ textAlign: "center", padding: "0.4rem", background: "rgba(255,255,255,0.02)", borderRadius: "4px" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>QR FORENSICS</span>
-                            <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginTop: "2px" }}>
-                              {analytics?.evidence_metrics?.detection_by_category?.QR ?? 28}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "center", padding: "0.4rem", background: "rgba(255,255,255,0.02)", borderRadius: "4px" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>URL / THREAT</span>
-                            <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginTop: "2px" }}>
-                              {analytics?.evidence_metrics?.detection_by_category?.LINK ?? 16}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "center", padding: "0.4rem", background: "rgba(255,255,255,0.02)", borderRadius: "4px" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>SCREENSHOTS</span>
-                            <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", marginTop: "2px" }}>
-                              {analytics?.evidence_metrics?.detection_by_category?.SCREENSHOT ?? 4}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 6 Quick Action Launchers */}
-                      <div style={{ background: "rgba(9, 13, 22, 0.4)", padding: "0.85rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                        <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-                          Rapid Investigation Launchpad
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.4rem" }}>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => setActiveTab("detect")}
-                            style={{ fontSize: "0.72rem", padding: "0.35rem 0.5rem", justifyContent: "flex-start", gap: "0.3rem" }}
-                          >
-                            <QrCode size={13} style={{ color: "var(--brand-primary)" }} /> Scan QR / Link
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => setActiveTab("check")}
-                            style={{ fontSize: "0.72rem", padding: "0.35rem 0.5rem", justifyContent: "flex-start", gap: "0.3rem" }}
-                          >
-                            <FileSearch size={13} style={{ color: "var(--brand-primary)" }} /> Ingest Vector
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => setActiveTab("investigation")}
-                            style={{ fontSize: "0.72rem", padding: "0.35rem 0.5rem", justifyContent: "flex-start", gap: "0.3rem" }}
-                          >
-                            <Shield size={13} style={{ color: "var(--brand-primary)" }} /> Review Cases
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => setActiveTab("graph")}
-                            style={{ fontSize: "0.72rem", padding: "0.35rem 0.5rem", justifyContent: "flex-start", gap: "0.3rem" }}
-                          >
-                            <Network size={13} style={{ color: "var(--brand-primary)" }} /> Mule Graph
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => setActiveTab("models")}
-                            style={{ fontSize: "0.72rem", padding: "0.35rem 0.5rem", justifyContent: "flex-start", gap: "0.3rem" }}
-                          >
-                            <Cpu size={13} style={{ color: "var(--brand-primary)" }} /> Qiskit Status
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => handleAskCopilot("Summarize current threat posture and quantum escalations across active cases")}
-                            style={{ fontSize: "0.72rem", padding: "0.35rem 0.5rem", justifyContent: "flex-start", gap: "0.3rem" }}
-                          >
-                            <MessageSquare size={13} style={{ color: "var(--brand-primary)" }} /> Ask Copilot
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Threat Monitor Feed */}
-                <div className="glass-panel">
-                  <div className="panel-header">
-                    <div>
-                      <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: 0, fontSize: "0.98rem" }}>
-                        <AlertTriangle size={17} style={{ color: "var(--color-caution)" }} />
-                        Active Operational Threat Stream & Alert Queue
-                      </h2>
-                      <p className="panel-desc" style={{ marginTop: "2px" }}>
-                        Real-time events evaluated through classical ensemble and quantum kernel escalation pipeline.
-                      </p>
-                    </div>
-                    <span className="sys-state ready">LIVE TELEMETRY</span>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginTop: "0.75rem" }}>
-                    {fraudAlerts.slice(0, 6).map((a, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: "var(--bg-surface-elevated)",
-                          borderLeft: `3px solid ${a.risk_level.includes("HIGH") ? "var(--color-high-risk)" : "var(--color-caution)"}`,
-                          padding: "0.75rem 1rem",
-                          borderRadius: "0 var(--radius-md) var(--radius-md) 0",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          cursor: "pointer"
-                        }}
-                        onClick={() => {
-                          setActiveCaseId(a.txn_id);
-                          loadCaseDetails(a.txn_id);
-                          setActiveTab("investigation");
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <span style={{ fontFamily: "JetBrains Mono", fontWeight: 700, color: "var(--text-primary)", fontSize: "0.82rem" }}>
-                              {a.txn_id}
-                            </span>
-                            <span className={`decision-pill ${a.decision?.toLowerCase()}`}>
-                              {a.decision}
-                            </span>
-                            <span style={{ fontSize: "0.65rem", padding: "1px 5px", borderRadius: "3px", background: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
-                              {a.risk_level}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            Amount: ₹{a.amount?.toLocaleString()} INR • Factors: {a.risk_factors?.join(", ")}
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: "right" }}>
-                          <span style={{ fontSize: "1rem", fontWeight: 800, color: a.risk_score >= 80 ? "var(--color-high-risk)" : "var(--color-caution)", fontFamily: "JetBrains Mono" }}>
-                            {a.risk_score}%
-                          </span>
-                          <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", display: "block" }}>Risk Score</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                <motion.div
+                  key="overview"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15 }}
+                  className="tab-pane"
+                >
+                  <CommandOverviewWorkspace
+                    analytics={analytics}
+                    health={health}
+                    quantumStatus={quantumStatus}
+                    fraudAlerts={fraudAlerts}
+                    recentTxns={recentTxns}
+                    activeCase={activeCase}
+                    casesList={casesList}
+                    onNavigate={(tab) => setActiveTab(tab)}
+                    onSelectCase={(cid) => {
+                      setActiveCaseId(cid);
+                      loadCaseDetails(cid);
+                      setActiveTab("investigation");
+                    }}
+                    onRunDetection={() => setActiveTab("detect")}
+                  />
+                </motion.div>
+              )}
 
             {/* 3. INVESTIGATION CENTER */}
             {activeTab === "investigation" && (
@@ -2677,519 +2433,34 @@ function App() {
                 transition={{ duration: 0.15 }}
                 className="tab-pane"
               >
-                <div className="case-workspace-container">
-                  {/* Case Navigation Bar */}
-                  <div className="case-nav-bar">
-                    <div className="case-search-box">
-                      <Search size={15} style={{ color: "var(--text-muted)" }} />
-                      <input
-                        placeholder="Search cases by ID, VPA, or recipient (e.g. 49910, ybl, 9901)..."
-                        value={caseSearchQuery}
-                        onChange={(e) => {
-                          setCaseSearchQuery(e.target.value);
-                          loadCasesList(e.target.value);
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700 }}>ACTIVE CASE:</span>
-                      <select
-                        className="case-selector-dropdown"
-                        value={activeCaseId || ""}
-                        onChange={(e) => {
-                          const cid = e.target.value;
-                          setActiveCaseId(cid);
-                          loadCaseDetails(cid);
-                        }}
-                      >
-                        {casesList.map((c) => (
-                          <option key={c.case_id} value={c.case_id}>
-                            {c.case_id} — {c.decision} ({c.risk_score}%)
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        className="btn btn-primary"
-                        style={{ padding: "0.25rem 0.6rem", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: "0.3rem" }}
-                        onClick={() => setShowNewCaseModal(true)}
-                        title="Direct Investigation Intake for files, QR, URLs, or 1-click evaluation presets"
-                      >
-                        + New Intake
-                      </button>
-                      <button
-                        className="btn btn-secondary"
-                        style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}
-                        onClick={handleResetDemoCases}
-                        title="Reset case store to clean deterministic SOC evaluation state for judging"
-                      >
-                        🔄 Reset Demos
-                      </button>
-                    </div>
-                  </div>
-
-                  {!activeCase ? (
-                    <div className="glass-panel" style={{ padding: "3rem", textAlign: "center" }}>
-                      <FileSearch size={36} style={{ color: "var(--text-dim)", margin: "0 auto 0.75rem auto" }} />
-                      <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>Select an investigation case from the index above to review evidence.</p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Case Header Card */}
-                      <div className="case-header-card">
-                        <div className="case-header-top">
-                          <div className="case-identity-group">
-                            <div className="case-id-badge">
-                              <Shield size={20} style={{ color: "var(--brand-primary)" }} />
-                              <span>CASE {activeCase.case_id}</span>
-                              {auditVerifyResult && (
-                                <span
-                                  className={`evidence-tag ${auditVerifyResult.is_valid ? "observed" : "critical"}`}
-                                  style={{ fontSize: "0.65rem", cursor: "pointer", marginLeft: "0.3rem" }}
-                                  onClick={() => handleVerifyAuditChain(activeCase.case_id)}
-                                  title={`Cryptographic Root Digest: ${auditVerifyResult.root_hash}`}
-                                >
-                                  {auditVerifyResult.is_valid ? "🛡️ SHA-256 SEAL: VERIFIED" : "⚠️ TAMPER DETECTED"}
-                                </span>
-                              )}
-                              <button
-                                className="btn btn-secondary"
-                                style={{ padding: "0.15rem 0.45rem", fontSize: "0.68rem" }}
-                                onClick={() => {
-                                  navigator.clipboard.writeText(activeCase.case_id);
-                                  setCopiedToast(true);
-                                  setTimeout(() => setCopiedToast(false), 2000);
-                                }}
-                              >
-                                {copiedToast ? <Check size={11} /> : <Copy size={11} />} {copiedToast ? "Copied" : "Copy"}
-                              </button>
-                            </div>
-                            <div className="case-meta-row">
-                              <span className={`sys-state ${activeCase.status === "ACTION_RECOMMENDED" ? "critical" : "ready"}`}>
-                                {activeCase.status.replace("_", " ")}
-                              </span>
-                              <span>•</span>
-                              <span>SOURCE: <b>{activeCase.source}</b></span>
-                              <span>•</span>
-                              <span>OPENED: {new Date(activeCase.created_at * 1000).toLocaleTimeString()}</span>
-                            </div>
-                          </div>
-
-                          <div className="case-metrics-strip">
-                            <div className="case-metric-cell">
-                              <span className="case-metric-label">Risk Score</span>
-                              <span className="case-metric-value" style={{ color: activeCase.risk.risk_score >= 70 ? "var(--color-high-risk)" : (activeCase.risk.risk_score >= 40 ? "var(--color-caution)" : "var(--color-safe)") }}>
-                                {activeCase.risk.risk_score}%
-                              </span>
-                            </div>
-                            <div className="case-metric-cell">
-                              <span className="case-metric-label">Confidence</span>
-                              <span className="case-metric-value">{(activeCase.risk.confidence * 100).toFixed(0)}%</span>
-                            </div>
-                            <div className="case-metric-cell">
-                              <span className="case-metric-label">Decision</span>
-                              <span className={`decision-pill ${activeCase.risk.decision.toLowerCase()}`}>
-                                {activeCase.risk.decision}
-                              </span>
-                            </div>
-                            <div className="case-metric-cell">
-                              <span className="case-metric-label">Quantum Gate</span>
-                              <span className="case-metric-value" style={{ fontSize: "0.82rem", color: "var(--brand-primary)" }}>
-                                {activeCase.quantum_escalation?.quantum_escalation_status || "FAST_PATH"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="case-actions-bar">
-                          <button className="btn btn-primary" onClick={() => { setActiveTab("graph"); setGraphMode("case"); loadCaseGraph(activeCase.case_id); }}>
-                            <Network size={13} /> View Fraud Graph →
-                          </button>
-                          <button className="btn btn-secondary" onClick={() => setActiveTab("chain")}>
-                            <GitFork size={13} /> View Attack Chain →
-                          </button>
-                          <button className="btn btn-secondary" onClick={() => handleAskCopilot(`Explain primary risk drivers for case ${activeCase.case_id}`)}>
-                            <MessageSquare size={13} /> Ask Copilot
-                          </button>
-                          <button className="btn btn-secondary" onClick={handleExportCaseDossier}>
-                            <Download size={13} /> Export Dossier
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Scorecard */}
-                      <div className="scorecard-strip">
-                        <div className="scorecard-tile">
-                          <span className="scorecard-label">Evidence Quality</span>
-                          <span className="scorecard-val" style={{ color: "var(--color-safe)" }}>{activeCase.scorecard.evidence_quality}</span>
-                        </div>
-                        <div className="scorecard-tile">
-                          <span className="scorecard-label">Model Confidence</span>
-                          <span className="scorecard-val" style={{ color: "var(--brand-primary)" }}>{activeCase.scorecard.model_confidence}</span>
-                        </div>
-                        <div className="scorecard-tile">
-                          <span className="scorecard-label">Entity Context</span>
-                          <span className="scorecard-val">{activeCase.scorecard.entity_context}</span>
-                        </div>
-                        <div className="scorecard-tile">
-                          <span className="scorecard-label">Graph Topology</span>
-                          <span className="scorecard-val">{activeCase.scorecard.graph_context}</span>
-                        </div>
-                        <div className="scorecard-tile">
-                          <span className="scorecard-label">External Threat Feed</span>
-                          <span className="scorecard-val" style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-                            {activeCase.scorecard.external_intelligence}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Quantum Escalation & Simulation Telemetry */}
-                      <div className="glass-panel" style={{ background: "rgba(10, 16, 28, 0.6)", border: "1px solid var(--border-subtle)", padding: "0.85rem 1rem", borderRadius: "var(--radius-lg)", marginBottom: "0.5rem" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                            ⚛️ Quantum Kernel Telemetry & Execution State
-                          </span>
-                          <span className={`evidence-tag ${activeCase.quantum_escalation?.circuit_executed ? "observed" : "unavailable"}`} style={{ fontSize: "0.65rem" }}>
-                            {activeCase.quantum_escalation?.circuit_executed ? "CIRCUIT EXECUTED (SIMULATION)" : "NOT EXECUTED (FAST PATH)"}
-                          </span>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.6rem", fontSize: "0.74rem" }}>
-                          <div style={{ background: "rgba(255,255,255,0.02)", padding: "0.4rem 0.6rem", borderRadius: "4px" }}>
-                            <span style={{ color: "var(--text-muted)", display: "block" }}>Execution Backend</span>
-                            <span style={{ color: "var(--brand-primary)", fontWeight: 600 }}>{activeCase.quantum_escalation?.backend_used || "Local Qiskit Statevector Simulator (CPU)"}</span>
-                          </div>
-                          <div style={{ background: "rgba(255,255,255,0.02)", padding: "0.4rem 0.6rem", borderRadius: "4px" }}>
-                            <span style={{ color: "var(--text-muted)", display: "block" }}>Feature Map Architecture</span>
-                            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>4-Qubit ZZFeatureMap (reps=2, linear)</span>
-                          </div>
-                          <div style={{ background: "rgba(255,255,255,0.02)", padding: "0.4rem 0.6rem", borderRadius: "4px" }}>
-                            <span style={{ color: "var(--text-muted)", display: "block" }}>Decision Threshold & Policy</span>
-                            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>τ* = 0.1083 (Defensive Boost Only)</span>
-                          </div>
-                          <div style={{ background: "rgba(255,255,255,0.02)", padding: "0.4rem 0.6rem", borderRadius: "4px" }}>
-                            <span style={{ color: "var(--text-muted)", display: "block" }}>Hardware Grounding</span>
-                            <span style={{ color: "var(--text-dim)", fontStyle: "italic" }}>Local CPU Simulation • No Physical QPU</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Executive Summary */}
-                      <div className="case-summary-card">
-                        <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                          <FileText size={16} style={{ color: "var(--brand-primary)" }} /> Executive Investigator Summary
-                        </h3>
-                        
-                        <div className="summary-qa-grid">
-                          <div className="summary-qa-box">
-                            <h4>📌 What happened?</h4>
-                            <p>{activeCase.summary.what_happened}</p>
-                          </div>
-                          <div className="summary-qa-box">
-                            <h4>⚠️ Why is it suspicious?</h4>
-                            <p>{activeCase.summary.why_suspicious}</p>
-                          </div>
-                          <div className="summary-qa-box">
-                            <h4>🎯 What should happen next?</h4>
-                            <p>{activeCase.summary.what_should_happen_next}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Evidence Explorer */}
-                      <div className="glass-panel">
-                        <div className="panel-header">
-                          <h2><Layers size={16} style={{ color: "var(--brand-primary)" }} /> Extracted Forensic Evidence ({activeCase.evidence?.length || 0} Items)</h2>
-                          <span className="evidence-tag observed">GROUNDED EVIDENCE</span>
-                        </div>
-
-                        <div className="evidence-items-list">
-                          {activeCase.evidence?.map((ev, idx) => (
-                            <div
-                              key={idx}
-                              className={`evidence-item-row ${selectedEvidenceItem === ev ? "selected" : ""}`}
-                              onClick={() => setSelectedEvidenceItem(selectedEvidenceItem === ev ? null : ev)}
-                              style={{ cursor: "pointer" }}
-                            >
-                              <div>
-                                <span className="evidence-field-name">{ev.category} • {ev.field}</span>
-                                <div className="evidence-val">{String(ev.value)}</div>
-                              </div>
-                              <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                                <span className={`evidence-tag ${ev.status ? ev.status.toLowerCase() : "observed"}`}>
-                                  {ev.status}
-                                </span>
-                                <span style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>[{ev.source}]</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Connected Entities */}
-                      <div className="glass-panel">
-                        <div className="panel-header">
-                          <h2><Network size={16} style={{ color: "var(--brand-primary)" }} /> Connected Entities ({activeCase.entities?.length || 0})</h2>
-                          <span className="evidence-tag observed">TOPOLOGY CONTEXT</span>
-                        </div>
-
-                        <div className="entities-grid">
-                          {activeCase.entities?.map((ent, idx) => (
-                            <div
-                              key={idx}
-                              className={`entity-card ${selectedEntity === ent ? "selected" : ""}`}
-                              onClick={() => setSelectedEntity(selectedEntity === ent ? null : ent)}
-                            >
-                              <div className="entity-card-top">
-                                <span className="entity-type-tag">{ent.entity_type}</span>
-                                <span className="evidence-tag observed" style={{ fontSize: "0.62rem" }}>
-                                  {ent.connected_count} links
-                                </span>
-                              </div>
-                              <span className="entity-name">{ent.name}</span>
-                              <div className="entity-attrs-preview">
-                                <span>Risk: <b>{ent.risk_score}%</b></span>
-                                <span>ID: <code>{ent.entity_id}</code></span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Human SOC Review & Decision */}
-                      <div className="glass-panel">
-                        <div className="panel-header">
-                          <h2><CheckCircle size={16} style={{ color: "var(--brand-primary)" }} /> Human SOC Review Decision</h2>
-                          <span className={`evidence-tag ${activeCase.decision_history.analyst_review_status === "CONFIRMED" ? "observed" : "unavailable"}`}>
-                            {activeCase.decision_history.analyst_review_status}
-                          </span>
-                        </div>
-
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "0.5rem" }}>
-                          <div>
-                            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>
-                              ANALYST DECISION ACTION:
-                            </label>
-                            <select
-                              className="case-selector-dropdown"
-                              style={{ width: "100%" }}
-                              value={analystAction}
-                              onChange={(e) => setAnalystAction(e.target.value)}
-                            >
-                              <option value="CONFIRM_RECOMMENDATION">✓ Confirm Machine Recommendation</option>
-                              <option value="OVERRIDE_STEP_UP">⚠️ Require Step-Up Biometric Authentication</option>
-                              <option value="OVERRIDE_APPROVE">🛡️ Override to Approve (Verified Safe)</option>
-                              <option value="ESCALATE_TO_SENIOR">⚡ Escalate to Senior Security Lead</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>
-                              AUDIT RATIONALE:
-                            </label>
-                            <textarea
-                              rows={2}
-                              placeholder="Enter forensic investigation rationale for audit trail..."
-                              value={analystRationale}
-                              onChange={(e) => setAnalystRationale(e.target.value)}
-                              style={{ width: "100%", background: "var(--bg-surface-elevated)", border: "1px solid var(--border-medium)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", padding: "0.45rem", fontSize: "0.78rem" }}
-                            />
-                          </div>
-
-                          <button
-                            className="btn btn-primary"
-                            onClick={handleSubmitAnalystDecision}
-                            disabled={decisionSubmitting}
-                            style={{ alignSelf: "flex-start" }}
-                          >
-                            {decisionSubmitting ? "Submitting..." : "Submit SOC Review Decision →"}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Cryptographic SHA-256 Tamper-Evident Audit Trail */}
-                      <div className="glass-panel" style={{ marginTop: "1rem" }}>
-                        <div className="panel-header">
-                          <h2>
-                            <Shield size={16} style={{ color: "var(--brand-primary)" }} />
-                            Cryptographic SHA-256 Audit Trail ({activeCase.audit_chain?.length || 0} Blocks)
-                          </h2>
-                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                            {auditVerifyResult?.is_valid && (
-                              <span className="evidence-tag observed" style={{ fontSize: "0.65rem" }}>
-                                ✓ HASH CHAIN INTACT
-                              </span>
-                            )}
-                            <button
-                              className="btn btn-secondary"
-                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.68rem" }}
-                              onClick={() => handleVerifyAuditChain(activeCase.case_id)}
-                              disabled={auditVerifying}
-                            >
-                              {auditVerifying ? "Verifying..." : "Re-Verify Chain"}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div style={{ marginTop: "0.5rem", fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
-                          Immutable state transitions linked via cryptographic SHA-256 chaining (<code>entry_hash = H(idx : ts : event : actor : details : prev_hash)</code>).
-                          Root Digest: <code style={{ color: "var(--brand-primary)", fontSize: "0.7rem" }}>{auditVerifyResult?.root_hash || activeCase.audit_chain?.[activeCase.audit_chain.length - 1]?.entry_hash || "0".repeat(64)}</code>
-                        </div>
-
-                        <div className="evidence-items-list">
-                          {activeCase.audit_chain && activeCase.audit_chain.length > 0 ? (
-                            activeCase.audit_chain.map((entry, idx) => (
-                              <div key={idx} className="evidence-item-row" style={{ alignItems: "flex-start" }}>
-                                <div style={{ minWidth: "40px" }}>
-                                  <span className="evidence-tag observed" style={{ fontSize: "0.62rem" }}>#{entry.index}</span>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                                    <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.78rem" }}>{entry.event}</span>
-                                    <span style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>
-                                      {new Date(entry.timestamp * 1000).toLocaleTimeString()} by <b>{entry.actor}</b>
-                                    </span>
-                                  </div>
-                                  <div style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>{entry.details}</div>
-                                  <div style={{ marginTop: "0.3rem", fontSize: "0.65rem", color: "var(--text-dim)", fontFamily: "monospace" }}>
-                                    Hash: {entry.entry_hash?.slice(0, 24)}... (Prev: {entry.prev_hash?.slice(0, 16)}...)
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div style={{ padding: "1rem", textAlign: "center", color: "var(--text-dim)", fontSize: "0.75rem" }}>
-                              Audit trail initialized at genesis.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Direct Intake Modal */}
-                  {showNewCaseModal && (
-                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "1rem" }} onClick={() => setShowNewCaseModal(false)}>
-                      <div className="glass-panel" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "620px", width: "100%", padding: "1.5rem", borderRadius: "var(--radius-lg)", maxHeight: "90vh", overflowY: "auto" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                          <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.05rem", color: "var(--text-primary)" }}>
-                            <Shield size={18} style={{ color: "var(--brand-primary)" }} /> Direct Investigation Intake
-                          </h3>
-                          <button className="btn btn-secondary" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setShowNewCaseModal(false)}>✕</button>
-                        </div>
-
-                        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-                          Ingest suspicious evidence into a unified case with grounded QR decoding, URL reputation, FraudDNA attribution, and cryptographic audit hashing.
-                        </p>
-
-                        {/* Preset Quick-Buttons */}
-                        <div style={{ marginBottom: "1rem" }}>
-                          <span style={{ fontSize: "0.72rem", color: "var(--text-dim)", fontWeight: 700, display: "block", marginBottom: "0.4rem" }}>
-                            1-CLICK EVALUATION PRESETS:
-                          </span>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem" }}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ fontSize: "0.7rem", textAlign: "left", padding: "0.4rem 0.6rem" }}
-                              onClick={() => {
-                                setNewCaseTitle("Verified Retail QR Payment");
-                                setNewCaseType("QR");
-                                setNewCasePayload("upi://pay?pa=verified.store@icici&pn=Verified%20Store%20Retail&am=2500.00&cu=INR&tn=Invoice%208801");
-                              }}
-                            >
-                              🟢 <b>Case A</b> — Genuine Retail QR (₹2,500)
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ fontSize: "0.7rem", textAlign: "left", padding: "0.4rem 0.6rem" }}
-                              onClick={() => {
-                                setNewCaseTitle("Amount Manipulation QR Mismatch");
-                                setNewCaseType("QR");
-                                setNewCasePayload("upi://pay?pa=stealth.drain@ybl&pn=Quick%20Discount&am=45000.00&cu=INR&tn=Flash%20Sale");
-                              }}
-                            >
-                              🔴 <b>Case B</b> — QR Amount Mismatch (₹45,000)
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ fontSize: "0.7rem", textAlign: "left", padding: "0.4rem 0.6rem" }}
-                              onClick={() => {
-                                setNewCaseTitle("Phishing Lookalike Rewards Link");
-                                setNewCaseType("LINK");
-                                setNewCasePayload("https://secure-hdfc-rewards.xyz/redeem-points");
-                              }}
-                            >
-                              🔴 <b>Case D</b> — Lookalike Phishing Link (.xyz)
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ fontSize: "0.7rem", textAlign: "left", padding: "0.4rem 0.6rem" }}
-                              onClick={() => {
-                                setNewCaseTitle("Ambiguous High-Uncertainty Transaction");
-                                setNewCaseType("QR");
-                                setNewCasePayload("upi://pay?pa=borderline.escrow@axis&pn=Crypto%20Escrow&am=85000.00&cu=INR&tn=P2P%20Settlement");
-                              }}
-                            >
-                              ⚛️ <b>Case 5</b> — Borderline Quantum Gate (₹85k)
-                            </button>
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                          <div>
-                            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: "0.2rem" }}>
-                              CASE TITLE:
-                            </label>
-                            <input
-                              placeholder="e.g. Suspicious Cashback QR Intake"
-                              value={newCaseTitle}
-                              onChange={(e) => setNewCaseTitle(e.target.value)}
-                              style={{ width: "100%", background: "var(--bg-surface-elevated)", border: "1px solid var(--border-medium)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", padding: "0.4rem", fontSize: "0.78rem" }}
-                            />
-                          </div>
-
-                          <div>
-                            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: "0.2rem" }}>
-                              EVIDENCE TYPE:
-                            </label>
-                            <select
-                              value={newCaseType}
-                              onChange={(e) => setNewCaseType(e.target.value)}
-                              style={{ width: "100%", background: "var(--bg-surface-elevated)", border: "1px solid var(--border-medium)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", padding: "0.4rem", fontSize: "0.78rem" }}
-                            >
-                              <option value="QR">QR Code Payload / UPI URI</option>
-                              <option value="LINK">Payment URL / Web Link</option>
-                              <option value="FILE">Raw File / Document</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: "0.2rem" }}>
-                              PAYLOAD OR URI:
-                            </label>
-                            <textarea
-                              rows={3}
-                              placeholder="Paste UPI URI (upi://pay?...), URL (https://...), or raw text..."
-                              value={newCasePayload}
-                              onChange={(e) => setNewCasePayload(e.target.value)}
-                              style={{ width: "100%", background: "var(--bg-surface-elevated)", border: "1px solid var(--border-medium)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", padding: "0.4rem", fontSize: "0.78rem" }}
-                            />
-                          </div>
-
-                          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.5rem" }}>
-                            <button className="btn btn-secondary" onClick={() => setShowNewCaseModal(false)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={handleCreateNewCase} disabled={newCaseLoading}>
-                              {newCaseLoading ? "Ingesting & Analyzing..." : "Create Investigation Case →"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <InvestigationCommandCenter
+                  casesList={casesList}
+                  activeCase={activeCase}
+                  activeCaseId={activeCaseId}
+                  onSelectCase={(cid) => {
+                    setActiveCaseId(cid);
+                    loadCaseDetails(cid);
+                  }}
+                  onSearchCases={(query) => {
+                    setCaseSearchQuery(query);
+                    loadCasesList(query);
+                  }}
+                  searchQuery={caseSearchQuery}
+                  onOpenIntakeModal={() => setShowNewCaseModal(true)}
+                  onResetDemos={handleResetDemoCases}
+                  onVerifyAuditChain={handleVerifyAuditChain}
+                  auditVerifyResult={auditVerifyResult}
+                  auditVerifying={auditVerifying}
+                  onSubmitAnalystDecision={handleSubmitAnalystDecision}
+                  decisionSubmitting={decisionSubmitting}
+                  analystAction={analystAction}
+                  setAnalystAction={setAnalystAction}
+                  analystRationale={analystRationale}
+                  setAnalystRationale={setAnalystRationale}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onAskCopilot={(prompt) => handleAskCopilot(prompt)}
+                  onExportDossier={() => handleExportDossier(activeCase?.case_id)}
+                />
               </motion.div>
             )}
 
@@ -3322,121 +2593,39 @@ function App() {
             )}
 
             {/* 8. MODEL CONSENSUS / UNCERTAINTY */}
-            {activeTab === "models" && (
+            {activeTab === "agent-workspace" && (
               <motion.div
-                key="models"
+                key="agent-workspace"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.15 }}
                 className="tab-pane"
               >
-                <div className="glass-panel">
-                  <div className="panel-header">
-                    <h2><Cpu size={18} style={{ color: "var(--brand-primary)" }} /> Model Consensus & Hybrid Benchmark Matrix</h2>
-                    <span className="evidence-tag observed">HYBRID INFERENCE</span>
-                  </div>
-                  <p className="panel-desc">
-                    Heterogeneous classical ML ensemble consensus compared against Qiskit quantum kernel escalation metrics.
-                  </p>
+                <AgentWorkspace
+                  health={health}
+                  quantumStatus={quantumStatus}
+                  onNavigate={(tab) => setActiveTab(tab)}
+                />
+              </motion.div>
+            )}
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "1rem" }}>
-                    <div style={{ background: "var(--bg-surface-elevated)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "1.25rem" }}>
-                      <h3 style={{ fontSize: "0.9rem", color: "var(--text-primary)", marginBottom: "0.5rem" }}>
-                        Classical ML Ensemble Performance
-                      </h3>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        {modelComparison.map((m, idx) => (
-                          <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "0.55rem 0.75rem", background: "rgba(9, 13, 22, 0.4)", borderRadius: "4px", fontSize: "0.78rem" }}>
-                            <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{m.model_name || m.name}</span>
-                            <span style={{ fontFamily: "JetBrains Mono", color: "var(--brand-primary)" }}>
-                              Accuracy: {((m.accuracy || 0.94) * 100).toFixed(1)}% • ROC-AUC: {((m.roc_auc || 0.96) * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ background: "var(--bg-surface-elevated)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "1.25rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                        <h3 style={{ fontSize: "0.9rem", color: "var(--brand-primary)", margin: 0 }}>
-                          ⚛️ IBM Qiskit Quantum Engine Telemetry
-                        </h3>
-                        <button className="btn btn-secondary" style={{ fontSize: "0.7rem", padding: "2px 8px" }} onClick={loadQuantumBenchmark} disabled={benchmarkLoading}>
-                          {benchmarkLoading ? "Running..." : "Run Ablation Benchmark"}
-                        </button>
-                      </div>
-                      <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, fontFamily: "JetBrains Mono" }}>
-                        <div><b>Engine Status:</b> <span style={{ color: "var(--color-safe)" }}>● {quantumStatus?.execution_mode || "SIMULATION"}</span> (Qiskit {quantumStatus?.qiskit_version || "2.5.2"})</div>
-                        <div><b>Execution Mode:</b> Local CPU Statevector Simulation (No Hardware QPU)</div>
-                        <div><b>Qiskit ML Version:</b> {quantumStatus?.qiskit_machine_learning_version || "0.9.1"}</div>
-                        <div><b>Feature Map:</b> 4-Qubit ZZFeatureMap (reps=2, linear entanglement)</div>
-                        <div><b>Circuit Depth:</b> {quantumStatus?.circuit_telemetry?.depth ?? 22} | <b>Total Gates:</b> {quantumStatus?.circuit_telemetry?.size ?? 34} (CX: 12, U: 22)</div>
-                        <div><b>Kernel Space:</b> FidelityStatevectorKernel in Hilbert Space ℂ¹⁶</div>
-                        <div><b>Calibrated Threshold τ*:</b> 0.1083 (Defensive Boost +15 if exceeded)</div>
-                        <div><b>PSD Verification:</b> {quantumStatus?.circuit_telemetry?.verification?.is_psd ? "VERIFIED (Symmetric & PSD)" : "VALID"}</div>
-                      </div>
-                      <div style={{ marginTop: "0.75rem", padding: "0.4rem 0.6rem", background: "rgba(255,255,255,0.02)", borderRadius: "4px", border: "1px solid var(--border-subtle)", fontSize: "0.68rem", color: "var(--text-dim)" }}>
-                        💡 <b>Hardware Readiness:</b> {quantumStatus?.ibm_hardware_disclaimer || "Local CPU Statevector simulation active. Physical QPU execution requires valid IBM_QUANTUM_TOKEN."}
-                      </div>
-                    </div>
-                  </div>
-
-                  {quantumBenchmarkData && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{ marginTop: "1.25rem", background: "var(--bg-surface-elevated)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "1.25rem" }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                        <h4 style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-                          📊 Empirical Ablation Benchmark (Classical vs Hybrid Quantum)
-                        </h4>
-                        <span className="evidence-tag observed">{quantumBenchmarkData.dataset_info?.dataset_type || "SYNTHETIC_EVALUATION"}</span>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                        <div style={{ background: "rgba(9, 13, 22, 0.4)", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-subtle)" }}>
-                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-                            {quantumBenchmarkData.comparison?.classical_only?.architecture || "Classical Baseline"}
-                          </span>
-                          <div style={{ marginTop: "0.5rem", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, fontFamily: "JetBrains Mono" }}>
-                            <div>Precision: <b>{((quantumBenchmarkData.comparison?.classical_only?.precision ?? 0.85) * 100).toFixed(1)}%</b></div>
-                            <div>Recall: <b>{((quantumBenchmarkData.comparison?.classical_only?.recall ?? 0.80) * 100).toFixed(1)}%</b></div>
-                            <div>F1-Score: <b>{((quantumBenchmarkData.comparison?.classical_only?.f1_score ?? 0.82) * 100).toFixed(1)}%</b></div>
-                            <div>ROC-AUC: <b>{((quantumBenchmarkData.comparison?.classical_only?.roc_auc ?? 0.90) * 100).toFixed(1)}%</b></div>
-                            <div>Avg Latency: <b>{quantumBenchmarkData.comparison?.classical_only?.mean_latency_ms ?? 0.05} ms</b></div>
-                            {quantumBenchmarkData.comparison?.classical_only?.confusion_matrix && (
-                              <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "2px" }}>
-                                CM: TN={quantumBenchmarkData.comparison.classical_only.confusion_matrix[0][0]}, FP={quantumBenchmarkData.comparison.classical_only.confusion_matrix[0][1]} | FN={quantumBenchmarkData.comparison.classical_only.confusion_matrix[1][0]}, TP={quantumBenchmarkData.comparison.classical_only.confusion_matrix[1][1]}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div style={{ background: "rgba(9, 13, 22, 0.4)", padding: "0.85rem", borderRadius: "6px", border: "1px solid var(--border-subtle)" }}>
-                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--brand-primary)", textTransform: "uppercase" }}>
-                            {quantumBenchmarkData.comparison?.hybrid_quantum_classical?.architecture || "Hybrid Quantum Pipeline"}
-                          </span>
-                          <div style={{ marginTop: "0.5rem", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, fontFamily: "JetBrains Mono" }}>
-                            <div>Precision: <b style={{ color: "var(--color-safe)" }}>{((quantumBenchmarkData.comparison?.hybrid_quantum_classical?.precision ?? 0.90) * 100).toFixed(1)}%</b></div>
-                            <div>Recall: <b style={{ color: "var(--color-safe)" }}>{((quantumBenchmarkData.comparison?.hybrid_quantum_classical?.recall ?? 0.88) * 100).toFixed(1)}%</b></div>
-                            <div>F1-Score: <b style={{ color: "var(--color-safe)" }}>{((quantumBenchmarkData.comparison?.hybrid_quantum_classical?.f1_score ?? 0.89) * 100).toFixed(1)}%</b></div>
-                            <div>ROC-AUC: <b style={{ color: "var(--color-safe)" }}>{((quantumBenchmarkData.comparison?.hybrid_quantum_classical?.roc_auc ?? 0.94) * 100).toFixed(1)}%</b></div>
-                            <div>Avg Latency: <b>{quantumBenchmarkData.comparison?.hybrid_quantum_classical?.mean_latency_ms ?? 1.2} ms</b></div>
-                            {quantumBenchmarkData.comparison?.hybrid_quantum_classical?.confusion_matrix && (
-                              <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "2px" }}>
-                                CM: TN={quantumBenchmarkData.comparison.hybrid_quantum_classical.confusion_matrix[0][0]}, FP={quantumBenchmarkData.comparison.hybrid_quantum_classical.confusion_matrix[0][1]} | FN={quantumBenchmarkData.comparison.hybrid_quantum_classical.confusion_matrix[1][0]}, TP={quantumBenchmarkData.comparison.hybrid_quantum_classical.confusion_matrix[1][1]}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: "0.75rem", fontSize: "0.72rem", color: "var(--text-dim)", fontStyle: "italic" }}>
-                        Note: {quantumBenchmarkData.technical_honest_assessment || "Quantum kernel provides non-linear feature boundary disambiguation for high-risk and borderline cases."}
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
+            {/* 6. QUANTUM RESEARCH LAB */}
+            {(activeTab === "quantum-lab" || activeTab === "models") && (
+              <motion.div
+                key="quantum-lab"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="tab-pane"
+              >
+                <QuantumResearchLabWorkspace
+                  quantumStatus={quantumStatus}
+                  quantumBenchmarkData={quantumBenchmarkData}
+                  benchmarkLoading={benchmarkLoading}
+                  onRunBenchmark={loadQuantumBenchmark}
+                />
               </motion.div>
             )}
 

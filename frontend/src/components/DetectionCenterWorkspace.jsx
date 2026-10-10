@@ -1,11 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  QrCode, Link as LinkIcon, Image as ImageIcon, CreditCard,
+  QrCode, Link as LinkIcon, Image as ImageIcon, CreditCard, FileText,
   Search, ShieldAlert, Cpu, ArrowRight, Upload, Play, CheckCircle,
-  AlertTriangle, RefreshCw, FileSearch, Sparkles, ChevronRight, Layers, Eye
+  AlertTriangle, RefreshCw, FileSearch, Sparkles, ChevronRight, Layers, Eye,
+  Volume2, VolumeX, Bell, BellOff, RotateCcw, AlertOctagon
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+/**
+ * Synthesize an emergency dual-tone klaxon alert tone using standard Web Audio API.
+ * No external audio files or network requests required.
+ */
+function playHighRiskTone() {
+  return new Promise((resolve, reject) => {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        reject(new Error("Web Audio API not supported in this browser environment."));
+        return;
+      }
+      const ctx = new AudioContextClass();
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
+
+      const now = ctx.currentTime;
+      // Pulse 1: 880Hz (A5 alert tone)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(880, now);
+      osc1.frequency.exponentialRampToValueAtTime(440, now + 0.18);
+      gain1.gain.setValueAtTime(0.18, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.18);
+
+      // Pulse 2: 980Hz (High warning pulse)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "square";
+      osc2.frequency.setValueAtTime(980, now + 0.22);
+      osc2.frequency.exponentialRampToValueAtTime(520, now + 0.42);
+      gain2.gain.setValueAtTime(0.18, now + 0.22);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.22);
+      osc2.stop(now + 0.42);
+
+      // Pulse 3: 880Hz closing cadence
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = "sawtooth";
+      osc3.frequency.setValueAtTime(880, now + 0.46);
+      osc3.frequency.exponentialRampToValueAtTime(440, now + 0.68);
+      gain3.gain.setValueAtTime(0.20, now + 0.46);
+      gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.68);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(now + 0.46);
+      osc3.stop(now + 0.68);
+
+      setTimeout(() => {
+        try { ctx.close(); } catch (_) {}
+        resolve(true);
+      }, 720);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
 
 export function DetectionCenterWorkspace({
   fastApiBase,
@@ -43,6 +111,76 @@ export function DetectionCenterWorkspace({
   const [checkResult, setCheckResult] = useState(null);
   const [resultViewMode, setResultViewMode] = useState("simple"); // "simple" | "forensic"
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // Audio Warning Alert System State
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioStatus, setAudioStatus] = useState("IDLE"); // "IDLE" | "SOUNDING" | "MUTED" | "DISABLED" | "RESTRICTED"
+  const [audioCount, setAudioCount] = useState(0);
+  const lastAlertCaseRef = useRef(null);
+
+  // Helper to determine if a genuine completed detection verdict warrants emergency high-risk alert
+  const isHighRiskVerdict = useCallback((result) => {
+    if (!result || isAnalyzing) return false;
+    const isBlock = result.decision === "BLOCK";
+    const score = Number(result.risk_score || 0);
+    const trust = (result.trust_level || "").toUpperCase();
+    const riskLevel = (result.risk_level || "").toUpperCase();
+
+    // Genuine backend policy triggers: BLOCK decision, score >= 70, or HIGH RISK / UNTRUSTED status
+    return isBlock || score >= 70 || trust.includes("HIGH RISK") || riskLevel.includes("HIGH RISK");
+  }, [isAnalyzing]);
+
+  // Trigger high-risk audio alert on genuine newly completed result
+  useEffect(() => {
+    if (!checkResult || isAnalyzing) return;
+
+    const caseId = checkResult.case_id || `${checkResult.timestamp}-${checkResult.risk_score}`;
+    const shouldAlert = isHighRiskVerdict(checkResult);
+
+    // Alert deduplication: Only fire if this is a distinct result / case that hasn't sounded yet
+    if (shouldAlert && lastAlertCaseRef.current !== caseId) {
+      lastAlertCaseRef.current = caseId;
+
+      if (!audioEnabled) {
+        setAudioStatus("DISABLED");
+        return;
+      }
+      if (isMuted) {
+        setAudioStatus("MUTED");
+        return;
+      }
+
+      setAudioStatus("SOUNDING");
+      playHighRiskTone()
+        .then(() => {
+          setAudioStatus("IDLE");
+          setAudioCount((prev) => prev + 1);
+        })
+        .catch((err) => {
+          console.warn("Audio alert playback blocked or failed:", err);
+          setAudioStatus("RESTRICTED");
+        });
+    }
+  }, [checkResult, isAnalyzing, audioEnabled, isMuted, isHighRiskVerdict]);
+
+  // Replay handler for active high-risk finding
+  const handleReplayAlert = useCallback(() => {
+    if (!checkResult || !isHighRiskVerdict(checkResult)) return;
+    if (isMuted) {
+      setIsMuted(false);
+    }
+    setAudioStatus("SOUNDING");
+    playHighRiskTone()
+      .then(() => {
+        setAudioStatus("IDLE");
+        setAudioCount((prev) => prev + 1);
+      })
+      .catch((err) => {
+        console.warn("Replay audio failed or blocked:", err);
+        setAudioStatus("RESTRICTED");
+      });
+  }, [checkResult, isHighRiskVerdict, isMuted]);
 
   // Canonical Pitch Presets
   const pitchPresets = [
@@ -118,10 +256,6 @@ export function DetectionCenterWorkspace({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file (PNG, JPEG, WebP).");
-      return;
-    }
     if (file.size > 5 * 1024 * 1024) {
       alert("File exceeds maximum allowed size (5 MB).");
       return;
@@ -129,10 +263,15 @@ export function DetectionCenterWorkspace({
 
     setImageName(file.name);
     setSelectedScenarioId(null);
+    const isImg = file.type.startsWith("image/");
     const reader = new FileReader();
     reader.onload = () => {
       setImageBase64(reader.result);
-      setImagePreview(reader.result);
+      if (isImg) {
+        setImagePreview(reader.result);
+      } else {
+        setImagePreview(null);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -313,6 +452,12 @@ export function DetectionCenterWorkspace({
               <ImageIcon size={14} /> Receipt Screenshot
             </button>
             <button
+              className={`mode-tab-btn ${detectorMode === "FILE" ? "active" : ""}`}
+              onClick={() => { setDetectorMode("FILE"); setSelectedScenarioId(null); setCheckResult(null); }}
+            >
+              <FileText size={14} /> Document / File
+            </button>
+            <button
               className={`mode-tab-btn ${detectorMode === "TRANSACTION" ? "active" : ""}`}
               onClick={() => { setDetectorMode("TRANSACTION"); setSelectedScenarioId(null); setCheckResult(null); }}
             >
@@ -416,41 +561,49 @@ export function DetectionCenterWorkspace({
                 />
               </div>
 
-              {/* Image Upload box (mandatory for screenshot, optional for QR) */}
+              {/* Image / File Upload box */}
               <div style={{ marginBottom: "0.85rem" }}>
                 <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>
-                  Payment Screenshot / Artifact Image {detectorMode === "SCREENSHOT" ? "(Recommended)" : "(Optional)"}
+                  {detectorMode === "FILE"
+                    ? "Payment Document / Receipt Artifact (Required)"
+                    : `Payment Screenshot / Artifact Image ${detectorMode === "SCREENSHOT" ? "(Recommended)" : "(Optional)"}`}
                 </label>
                 <label className="file-dropzone" style={{ display: "block", margin: 0, padding: "1rem" }}>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept={detectorMode === "FILE" ? "*/*" : "image/*"}
                     onChange={handleFileUpload}
                     style={{ display: "none" }}
                   />
                   <div className="dropzone-inner">
                     <Upload size={18} style={{ color: "var(--text-muted)" }} />
                     <span style={{ fontSize: "0.75rem", color: "var(--text-primary)", fontWeight: 600 }}>
-                      {imageName ? imageName : "Drop receipt screenshot or browse (PNG, JPG)"}
+                      {imageName ? imageName : (detectorMode === "FILE" ? "Drop invoice, PDF, receipt or browse" : "Drop receipt screenshot or browse (PNG, JPG)")}
                     </span>
                     <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>
-                      Max 5MB • Extracted via RapidOCR & OpenCV
+                      Max 5MB • SHA-256 sealed & isolated without execution
                     </span>
                   </div>
                 </label>
 
-                {imagePreview && (
+                {imageName && (
                   <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.75rem", background: "rgba(0,0,0,0.2)", padding: "0.4rem", borderRadius: "6px" }}>
-                    <img
-                      src={imagePreview}
-                      alt="Uploaded proof"
-                      style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border-medium)" }}
-                    />
+                    {imagePreview ? (
+                      <img
+                        src={imagePreview}
+                        alt="Uploaded proof"
+                        style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border-medium)" }}
+                      />
+                    ) : (
+                      <div style={{ width: "48px", height: "48px", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", borderRadius: "4px", border: "1px solid var(--border-medium)" }}>
+                        <FileText size={24} style={{ color: "var(--brand-primary)" }} />
+                      </div>
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "0.74rem", color: "var(--text-primary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {imageName}
                       </div>
-                      <span style={{ fontSize: "0.65rem", color: "var(--color-safe)" }}>Image loaded in memory</span>
+                      <span style={{ fontSize: "0.65rem", color: "var(--color-safe)" }}>Artifact buffered safely in memory</span>
                     </div>
                     <button
                       className="btn btn-secondary"
@@ -564,6 +717,70 @@ export function DetectionCenterWorkspace({
                   </button>
                 </div>
               </div>
+
+              {/* High-Risk Incident Audio Alert Banner */}
+              {isHighRiskVerdict(checkResult) && (
+                <div className="high-risk-audio-alert-banner">
+                  <div className="high-risk-alert-top">
+                    <div className="high-risk-alert-info">
+                      <div className="high-risk-alert-icon-wrap">
+                        <AlertOctagon size={24} />
+                      </div>
+                      <div>
+                        <div className="high-risk-alert-headline">
+                          <span>CRITICAL PAYMENT THREAT DETECTED</span>
+                          <span className="audio-status-pill">
+                            {audioStatus === "SOUNDING" ? "🔊 ALARM SOUNDING" :
+                             audioStatus === "MUTED" ? "🔇 ALARM MUTED" :
+                             audioStatus === "DISABLED" ? "⚪ ALERTS DISABLED" :
+                             audioStatus === "RESTRICTED" ? "⚠️ BROWSER AUDIO RESTRICTED" :
+                             "AUDIBLE ALERT ARMED"}
+                          </span>
+                        </div>
+                        <div className="high-risk-alert-meta">
+                          Severity: <b>CRITICAL / HIGH RISK</b> • Verdict: <b>{checkResult.decision}</b> • Risk Score: <b>{checkResult.risk_score}/100</b>
+                        </div>
+                        <div className="high-risk-alert-evidence">
+                          Primary Evidence: {checkResult.reasons?.[0]?.title || checkResult.recommendation || "High-risk adversarial vector flagged by multi-signal pipeline"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Alert Control Cluster */}
+                    <div className="audio-controls-cluster">
+                      <button
+                        type="button"
+                        className={`audio-control-btn ${audioEnabled ? "active" : ""}`}
+                        onClick={() => setAudioEnabled(!audioEnabled)}
+                        title={audioEnabled ? "Disable automatic audio alerts" : "Enable automatic audio alerts"}
+                      >
+                        {audioEnabled ? <Bell size={13} /> : <BellOff size={13} />}
+                        {audioEnabled ? "Alerts Enabled" : "Alerts Disabled"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`audio-control-btn ${isMuted ? "active" : ""}`}
+                        onClick={() => setIsMuted(!isMuted)}
+                        title={isMuted ? "Unmute warning tone" : "Mute warning tone"}
+                      >
+                        {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                        {isMuted ? "Unmute" : "Mute"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="audio-control-btn"
+                        onClick={handleReplayAlert}
+                        title="Replay warning tone"
+                      >
+                        <RotateCcw size={13} />
+                        Replay Alert
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Hero Decision Banner */}
               <div className={`fintech-result-hero ${checkResult.decision === "APPROVE" ? "safe" : (checkResult.decision === "BLOCK" ? "high-risk" : "caution")}`} style={{ marginBottom: "1rem" }}>
